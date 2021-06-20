@@ -33,8 +33,9 @@ EOF
 sudo systemctl daemon-reload 
 sudo systemctl enable node_exporter 
 sudo systemctl start node_exporter
+IP=$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
 echo "#########################################"
-echo "node_exporter 1.1.2 installed successfully! Use curl -s http://<IP_ADDRESS>:9100/metrics to check Node_exporter."
+echo "node_exporter 1.1.2 installed successfully! Use curl -s http://$IP:9100/metrics to check Node_exporter."
 echo "Dont't forget to add targets for your prometheus. Use 'sudo nano /etc/prometheus/prometheus.yml' on your server with prometheus."
 echo "For additional help go to https://prometheus.io/docs/prometheus/latest/getting_started/"
 echo "#########################################"
@@ -90,8 +91,9 @@ EOF
 sudo systemctl daemon-reload 
 sudo systemctl enable prometheus 
 sudo systemctl start prometheus
+IP=$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
 echo "#########################################"
-echo "prometheus 2.25.2 installed successfully! Go to http://<IP_ADDRESS>:9090/ to check it"
+echo "prometheus 2.25.2 installed successfully! Go to http://$IP:9090/ to check it"
 echo "#########################################"
 read -n 1 -s -r -p "Press any key to continue..."
 sudo apt-get install -y adduser libfontconfig1
@@ -99,7 +101,7 @@ wget https://dl.grafana.com/oss/release/grafana_7.5.7_amd64.deb
 sudo dpkg -i grafana_7.5.7_amd64.deb
 sudo systemctl daemon-reload && sudo systemctl enable grafana-server && sudo systemctl start grafana-server
 echo "#########################################"
-echo "grafana 7.5.7 installed successfully! Go to http://<IP_ADDRESS>:3000/ to enter grafana"
+echo "grafana 7.5.7 installed successfully! Go to http://$IP:3000/ to enter grafana"
 echo "Don't forget to add data source in grafana interface. For additional help go to https://grafana.com/docs/grafana/latest/datasources/add-a-data-source/"
 echo "#########################################"
 read -n 1 -s -r -p "Press any key to continue..."
@@ -131,9 +133,9 @@ sudo systemctl enable pushgateway
 sudo systemctl start pushgateway
 VAR=$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
 echo "#########################################"
-echo "pushgateway 1.4.1 installed successfully!. Don't forget to add target (<IP_ADDRESS>:9091) in your prometheus"
+echo "pushgateway 1.4.1 installed successfully!. Don't forget to add target ($VAR:9091) in your prometheus"
 echo "Use 'sudo nano /etc/prometheus/prometheus.yml' on your server with prometheus"
-echo "your pushgataway address: ${VAR}:9091"
+echo "Your pushgataway address: ${VAR}:9091"
 echo "#########################################"
 read -n 1 -s -r -p "Press any key to continue..."
 }
