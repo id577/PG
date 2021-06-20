@@ -776,7 +776,9 @@ case $option in
         3) setupExporter
            setupPrometheusGrafana
 		   setupPushGateway;;
-		4) setupKiraExporter
+		4) echo "Enter your pushgateway ip-address and port (example: 144.145.32.32:9091):"
+		   read PUSHGATEWAY_ADDRESS
+		   setupKiraExporter
 		   setupExporter
 		   sudo firewall-cmd --zone=validator --permanent --add-port=9100/tcp
 		   sudo firewall-cmd --reload;;
