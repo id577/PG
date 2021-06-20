@@ -783,7 +783,7 @@ while true; do
 
 echo ""
 echo "#########################################"
-echo "I made this script for myself and I do not give any guarantees of performance (tested on Contabo servers). Use the script at your own risk."
+echo "Tested on Contabo servers. Use the script at your own risk."
 echo "Attention. Some exporters is only for nodes installed using nodes.guru guides (but of course you can edit it for yourself)"
 echo "Choose what to install. For help type '99'."
 echo "1 - Node_exporter"
@@ -828,10 +828,9 @@ case $option in
 		   setupZeitgeistExporter
 		   setupExporter;;
 		99) echo "#########################################"
-			echo "You need to install prometheus, grafana and pushgateway for collecting metrics from your servers/nodes."
-			echo "This needs to be done only once and preferably on a separate server."
-			echo "On each server with a node, you need to install node_exporter (for collecting linux metrics) and special exporter for the node (for example, if kira node is installed on your server, you need to install kira_exporter - to collect metrics from the node; node_exporter - to collect Linux metrics"
-			echo "After installation you need to add targets for prometheus and data source for grafana"
+			echo "You need to install prometheus, grafana and pushgateway for collecting metrics from your servers/nodes. It needs to be done only once and preferably on a separate server."
+			echo "You need to install node_exporter on each server with a node and special exporter for the node (for example, if kira node is installed on your server, you need to install kira_exporter (to collect metrics from the node) and node_exporter (to collect Linux metrics))"
+			echo "After installation you need to add targets (ip-addresses of your exporters, Use 'sudo nano /etc/prometheus/prometheus.yml' on your server with prometheus) for prometheus and data source (prometheus data base) for grafana"
 			echo "For additional help go to:"
 			echo "https://grafana.com/docs/grafana/latest/datasources/add-a-data-source/"
 			echo "https://prometheus.io/docs/prometheus/latest/getting_started/"
