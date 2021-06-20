@@ -788,12 +788,12 @@ echo "Attention. Some exporters is only for nodes installed using nodes.guru gui
 echo "Choose what to install. For help type '99'."
 echo "1 - Node_exporter"
 echo "2 - Prometheus + Grafana"
-echo "3 - Prometheus + Grafana + PushGateway + Node_exporter"
-echo "4 - Kira_exporter + Node_exporter"
-echo "5 - Nym_exporter (NodesGuru) + Node_exporter"
-echo "6 - Aleo_Miner_exporter (NodesGuru) + Node_exporter"
-echo "7 - Aleo_Node_exporter (NodesGuru) + Node_exporter"
-echo "8 - Zeitgeist_exporter (NodesGuru) + Node_exporter"
+echo "3 - PushGateway"
+echo "4 - Kira_exporter"
+echo "5 - Nym_exporter (NodesGuru)"
+echo "6 - Aleo_Miner_exporter (NodesGuru)"
+echo "7 - Aleo_Node_exporter (NodesGuru)"
+echo "8 - Zeitgeist_exporter (NodesGuru)"
 echo "99 - HELP"
 echo "999 - EXIT"
 echo "#########################################"
@@ -802,39 +802,43 @@ read option
 case $option in
         1) setupExporter;;
         2) setupPrometheusGrafana;;
-        3) setupExporter
-           setupPrometheusGrafana
-		   setupPushGateway;;
+        3) setupPushGateway;;
 		4) echo "Enter your pushgateway ip-address and port (example: 144.145.32.32:9091):"
 		   read PUSHGATEWAY_ADDRESS
 		   setupKiraExporter
-		   setupExporter
 		   sudo firewall-cmd --zone=validator --permanent --add-port=9100/tcp
 		   sudo firewall-cmd --reload;;
         5) echo "Enter your pushgateway ip-address and port (example: 144.145.32.32:9091):"
 		   read PUSHGATEWAY_ADDRESS
-		   setupNymExporter
-		   setupExporter;;
+		   setupNymExporter;;
 		6) echo "Enter your pushgateway ip-address and port (example: 144.145.32.32:9091):"
 		   read PUSHGATEWAY_ADDRESS
-		   setupAleoMinerExporter
-		   setupExporter;;
+		   setupAleoMinerExporter;;
 		7) echo "Enter your pushgateway ip-address and port (example: 144.145.32.32:9091):"
 		   read PUSHGATEWAY_ADDRESS
-		   setupAleoNodeExporter
-		   setupExporter;;
+		   setupAleoNodeExporter;;
 		8) echo "Enter your pushgateway ip-address and port (example: 144.145.32.32:9091):"
 		   read PUSHGATEWAY_ADDRESS
-		   setupZeitgeistExporter
-		   setupExporter;;
+		   setupZeitgeistExporter;;
 		99) echo "#########################################"
-			echo "You need to install prometheus, grafana and pushgateway for collecting metrics from your servers/nodes. It needs to be done only once and preferably on a separate server."
+			echo "Prometheus is application used for event monitoring and alerting. It records real-time metrics in a time series database"
+			echo "Grafana is interactive visualization web application. It provides charts, graphs, and alerts for the web when connected to supported data sources (prometheus)"
+			echo "Pushgateway is an intermediary service which allows you to push metrics from jobs which cannot be scraped"
+			echo "Node Exporter is a Prometheus exporter for server level and OS level metrics with configurable metric collectors"
+			echo "--------------------------------------------------------------------"
+			echo "You need to install prometheus and grafana for collecting metrics from your nodes. It needs to be done only once and preferably on a separate server."
+			echo "If you plan to use special exporters for blockchain nodes you need to install PushGateway. You can install pushgateway on the same server as prometheus"
 			echo "You need to install node_exporter on each server with a node and special exporter for the node (for example, if kira node is installed on your server, you need to install kira_exporter (to collect metrics from the node) and node_exporter (to collect Linux metrics))"
-			echo "After installation you need to add targets (ip-addresses of your exporters, Use 'sudo nano /etc/prometheus/prometheus.yml' on your server with prometheus) for prometheus and data source (prometheus data base) for grafana"
+			echo "After installation you need to add targets (ip-addresses of your exporters, Use 'sudo nano /etc/prometheus/prometheus.yml' on your server with prometheus) for prometheus and data source (prometheus database) for grafana"
+			echo "--------------------------------------------------------------------"
+			echo "How it works:"
+			echo "Node_exporter (OS metrics) -> Prometheus (database) -> Grafana (visualization)"
+			echo "Special_node_exporter (node metrics) -> Pushgateway -> Prometheus (database) -> Grafana (visualization)"
+			echo "--------------------------------------------------------------------"
 			echo "For additional help go to:"
 			echo "https://grafana.com/docs/grafana/latest/datasources/add-a-data-source/"
 			echo "https://prometheus.io/docs/prometheus/latest/getting_started/"
-			echo "Metrics from nodes have the construction: my_<node_name>_..."
+			echo "Metrics from nodes have the construction: my_<node_name>_..."			
 			echo "#########################################"
 			read -n 1 -s -r -p "Press any key to continue...";;
 		999) exit
