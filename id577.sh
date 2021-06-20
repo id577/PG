@@ -750,6 +750,8 @@ fi
 read -n 1 -s -r -p "Press any key to continue..."
 }
 
+while true; do
+
 echo "#########################################"
 echo "I made this script for myself and I do not give any guarantees of performance (tested on Contabo servers). Use the script at your own risk."
 echo "Attention. Some exporters is only for nodes installed using nodes.guru guides (but of course you can edit it for yourself)"
@@ -763,6 +765,7 @@ echo "6 - Aleo_Miner_exporter (NodesGuru) + Node_exporter"
 echo "7 - Aleo_Node_exporter (NodesGuru) + Node_exporter"
 echo "8 - Zeitgeist_exporter (NodesGuru) + Node_exporter"
 echo "99 - HELP"
+echo "999 - EXIT"
 echo "#########################################"
 read option
 case $option in
@@ -801,6 +804,9 @@ case $option in
 			echo "https://prometheus.io/docs/prometheus/latest/getting_started/"
 			echo "Metrics from nodes have the construction: my_<node_name>_..."
 			echo "#########################################"
+			read -n 1 -s -r -p "Press any key to continue...";;
+		999) exit
 esac
+done
 
 
