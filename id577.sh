@@ -166,7 +166,7 @@ read KIRA_MONIKER
 sudo tee <<EOF1 >/dev/null /usr/local/bin/kira_pg.sh
 #!/bin/bash
 
-IP=\$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
+IP=\$(ip addr show eth0 | grep "inet\b" | awk '{print \$2}' | cut -d/ -f1)
 JOB="kira"
 METRIC1='my_kira_top'
 METRIC2='my_kira_streak'
