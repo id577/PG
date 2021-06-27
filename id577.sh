@@ -1,20 +1,27 @@
 #!/bin/bash
 
+#VERSION 0.1.0b
+#VARIABLES
+NODE_EXPORTER_VERSION='1.1.2'
+PROMETHEUS_VERSION='2.28.0'
+GRAFANA_VERSION='8.0.3'
+PUSHGATEWAY_VERSION='1.4.1'
+
 ###################################################################################
 function setupExporter {
 
 CV=$(systemctl list-unit-files | grep "node_exporter.service")
-
 if [ "$CV" != "" ]
 then
 	systemctl stop node_exporter
-	rm -rf /etc/systemd/system/node_exporter*
+	rm -rf /etc/systemd/system/node_exporter* && rm -rf /usr/local/bin/node_exporter
 fi
 
-wget https://github.com/prometheus/node_exporter/releases/download/v1.1.2/node_exporter-1.1.2.linux-amd64.tar.gz
-tar xvf node_exporter-1.1.2.linux-amd64.tar.gz
-cp node_exporter-1.1.2.linux-amd64/node_exporter /usr/local/bin
+wget https://github.com/prometheus/node_exporter/releases/download/v$NODE_EXPORTER_VERSION/node_exporter-$NODE_EXPORTER_VERSION.linux-amd64.tar.gz
+tar xvf node_exporter-$NODE_EXPORTER_VERSION.linux-amd64.tar.gz
+cp node_exporter-$NODE_EXPORTER_VERSION.linux-amd64/node_exporter /usr/local/bin
 rm -rf node_exporter*
+
 sudo tee <<EOF >/dev/null /etc/systemd/system/node_exporter.service
 [Unit]
 Description=Node Exporter
@@ -30,13 +37,15 @@ ExecStart=/usr/local/bin/node_exporter
 [Install]
 WantedBy=multi-user.target
 EOF
+
 sudo systemctl daemon-reload 
 sudo systemctl enable node_exporter 
 sudo systemctl start node_exporter
+
 IP=$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
 echo ""
 echo "#########################################"
-echo "node_exporter 1.1.2 installed successfully! Use curl -s http://$IP:9100/metrics to check Node_exporter."
+echo "node_exporter v$NODE_EXPORTER_VERSION installed successfully! Use curl -s http://$IP:9100/metrics to check Node_exporter."
 echo "Dont't forget to add targets for your prometheus. Use 'sudo nano /etc/prometheus/prometheus.yml' on your server with prometheus."
 echo "For additional help go to https://prometheus.io/docs/prometheus/latest/getting_started/"
 echo "#########################################"
@@ -45,17 +54,25 @@ read -n 1 -s -r -p "Press any key to continue..."
 }
 
 ###################################################################################
-function setupPrometheusGrafana {
-wget https://github.com/prometheus/prometheus/releases/download/v2.25.2/prometheus-2.25.2.linux-amd64.tar.gz
+function setupPrometheus {
+
+CV=$(systemctl list-unit-files | grep "prometheus")
+if [ "$CV" != "" ]
+then
+	systemctl stop prometheus
+fi
+
+wget https://github.com/prometheus/prometheus/releases/download/v$PROMETHEUS_VERSION/prometheus-$PROMETHEUS_VERSION.linux-amd64.tar.gz
 tar xfz prometheus-*.tar.gz
-cd prometheus-2.25.2.linux-amd64
-sudo cp ./prometheus /usr/local/bin
+cd prometheus-$PROMETHEUS_VERSION.linux-amd64
+sudo cp ./prometheus /usr/local/bin/
 sudo cp ./promtool /usr/local/bin/
 sudo mkdir /etc/prometheus
-sudo mkdir /var/lib/prometheus
+sudo mkdir /var/lib/prometheus 
 sudo cp -r ./consoles /etc/prometheus
 sudo cp -r ./console_libraries /etc/prometheus
 cd .. && rm -rf prometheus*
+
 sudo tee <<EOF >/dev/null /etc/prometheus/prometheus.yml
 global:
   scrape_interval: 15s
@@ -70,6 +87,7 @@ scrape_configs:
     static_configs:
       - targets: ["localhost:9090"]
 EOF
+
 sudo tee <<EOF >/dev/null /etc/systemd/system/prometheus.service
 [Unit]
 Description=Prometheus Monitoring
@@ -81,6 +99,7 @@ User=root
 Group=root
 Type=simple
 ExecStart=/usr/local/bin/prometheus \
+--web.enable-admin-api \
 --config.file /etc/prometheus/prometheus.yml \
 --storage.tsdb.path /var/lib/prometheus/ \
 --web.console.templates=/etc/prometheus/consoles \
@@ -90,24 +109,33 @@ ExecReload=/bin/kill -HUP $MAINPID
 [Install]
 WantedBy=multi-user.target
 EOF
+
 sudo systemctl daemon-reload 
 sudo systemctl enable prometheus 
 sudo systemctl start prometheus
+
 IP=$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
 echo ""
 echo "#########################################"
-echo "prometheus 2.25.2 installed successfully! Go to http://$IP:9090/ to check it"
+echo "prometheus v$PROMETHEUS_VERSION installed successfully! Go to http://$IP:9090/ to check it"
 echo "#########################################"
 echo ""
 read -n 1 -s -r -p "Press any key to continue..."
+}
+
+###################################################################################
+function setupGrafana {
+
 sudo apt-get install -y adduser libfontconfig1
-wget https://dl.grafana.com/oss/release/grafana_7.5.7_amd64.deb
-sudo dpkg -i grafana_7.5.7_amd64.deb
+wget https://dl.grafana.com/oss/release/grafana_${GRAFANA_VERSION}_amd64.deb
+sudo dpkg -i grafana_${GRAFANA_VERSION}_amd64.deb
 rm -rf grafana*
 sudo systemctl daemon-reload && sudo systemctl enable grafana-server && sudo systemctl start grafana-server
+
+IP=$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
 echo ""
 echo "#########################################"
-echo "grafana 7.5.7 installed successfully! Go to http://$IP:3000/ to enter grafana"
+echo "grafana v$GRAFANA_VERSION installed successfully! Go to http://$IP:3000/ to enter grafana"
 echo "Don't forget to add data source in grafana interface. For additional help go to https://grafana.com/docs/grafana/latest/datasources/add-a-data-source/"
 echo "#########################################"
 echo ""
@@ -116,10 +144,11 @@ read -n 1 -s -r -p "Press any key to continue..."
 
 ###################################################################################
 function setupPushGateway {
-wget https://github.com/prometheus/pushgateway/releases/download/v1.4.1/pushgateway-1.4.1.linux-amd64.tar.gz
-tar xvfz pushgateway-1.4.1.linux-amd64.tar.gz
-sudo cp -r ./pushgateway-1.4.1.linux-amd64/pushgateway /usr/local/bin/
+wget https://github.com/prometheus/pushgateway/releases/download/v$PUSHGATEWAY_VERSION/pushgateway-$PUSHGATEWAY_VERSION.linux-amd64.tar.gz
+tar xvfz pushgateway-$PUSHGATEWAY_VERSION.linux-amd64.tar.gz
+sudo cp -r ./pushgateway-$PUSHGATEWAY_VERSION.linux-amd64/pushgateway /usr/local/bin/
 rm -rf pushgateway*
+
 sudo tee <<EOF >/dev/null /etc/systemd/system/pushgateway.service
 [Unit]
 Description=Prometheus Pushgateway
@@ -138,6 +167,7 @@ EOF
 sudo daemon-reload
 sudo systemctl enable pushgateway
 sudo systemctl start pushgateway
+
 VAR=$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
 echo ""
 echo "#########################################"
@@ -480,6 +510,7 @@ echo "ISACTIVE="\$ISACTIVE
 echo "ISSYNCED="\$ISSYNCED
 echo "PEERS_COUNT="\$PEERS_COUNT
 echo "BLOCKS_COUNT="\$BLOCKS_COUNT
+echo "BLOCKS_MINED_COUNT="\$BLOCKS_MINED_COUNT
 
 cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP
 # TYPE my_aleo_peers_count gauge
@@ -696,7 +727,7 @@ INFO_COUNT=\$(journalctl -u zeitgeistd -p 6 --since "1 minute ago" --until "now"
 TOTAL_IMPORTAN_MESSAGES=\$((\$EMERGENCY_COUNT+\$ALERTS_COUNT+\$CRITICAL_COUNT+\$ERRORS_COUNT+\$WARNINGS_COUNT+\$NOTICE_COUNT))
 
 PEERS_COUNT=\$(journalctl -u zeitgeistd -n 2 | grep -E -o "[0-9]* peers" | grep -E -o [0-9]*)
-if [ \$PEERS_COUNT = ""]
+if [ "\$PEERS_COUNT" = "" ]
 then
 	PEERS_COUNT=0
 fi
@@ -705,7 +736,7 @@ fi
 echo "INFO_COUNT="\$INFO_COUNT
 echo "TOTAL_IMPORTAN_MESSAGES="\$TOTAL_IMPORTAN_MESSAGES
 echo "PEERS="\$PEERS_COUNT
-
+2
 cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP
 # TYPE my_zeitgeist_isactive gauge
 \$METRIC1 \$ISACTIVE
@@ -779,47 +810,160 @@ fi
 read -n 1 -s -r -p "Press any key to continue..."
 }
 
+###################################################################################
+function setupRizonExporter {
+CV=$(systemctl list-unit-files | grep "rizon_pg.service")
+
+if [ "$CV" != "" ]
+then
+	systemctl stop rizon_pg
+	rm -rf /etc/systemd/system/rizon_pg*
+fi
+
+sudo tee <<EOF1 >/dev/null /usr/local/bin/rizon_pg.sh
+#!/bin/bash
+
+IP=\$(ip addr show eth0 | grep "inet\b" | awk '{print \$2}' | cut -d/ -f1)
+JOB="rizon"
+METRIC1='my_rizon_status'
+METRIC2='my_rizon_latest_block_height_count'
+METRIC3='my_rizon_is_synced'
+METRIC4='my_rizon_peers_count'
+
+function getMetrics {
+
+VAR=\$(/root/go/bin/rizond status 2>&1)
+
+STATUS=\$(echo \$VAR | grep -E -o "Error: post failed")
+if [ "\$STATUS" = "Error: post failed" ]
+then STATUS=0
+else STATUS=1
+fi
+
+LATEST_BLOCK_HEIGHT=\$(echo \$VAR | grep -E -o 'latest_block_height\":\"[0-9]*' | grep -E -o "[0-9]*")
+if [ "\$LATEST_BLOCK_HEIGHT" = "" ]
+then LATEST_BLOCK_HEIGHT=0
+fi
+
+IS_SYNCED=\$(echo \$VAR | grep -E -o 'catching_up\":(true|false)' | grep -E -o "(true|false)")
+if [ "\$IS_SYNCED" = "true" ]
+then IS_SYNCED=0
+else IS_SYNCED=1
+fi
+
+#DEBUG
+echo "STATUS="\$STATUS
+echo "LATEST_BLOCK_HEIGHT="\$LATEST_BLOCK_HEIGHT
+echo "IS_SYNCED="\$IS_SYNCED
+
+cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP
+# TYPE my_rizon_status gauge
+\$METRIC1 \$STATUS
+# TYPE my_rizon_latest_block_height_count gauge
+\$METRIC2 \$LATEST_BLOCK_HEIGHT
+# TYPE my_rizon_is_synced gauge
+\$METRIC3 \$IS_SYNCED
+
+EOF
+}
+
+while true; do
+	getMetrics
+	echo "sleep 60 sec"
+	sleep 60
+done
+
+EOF1
+
+chmod +x /usr/local/bin/rizon_pg.sh
+
+sudo tee <<EOF >/dev/null /etc/systemd/system/rizon_pg.service
+[Unit]
+Description=Rizon Metrics Exporter
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=root
+Group=root
+Type=simple
+ExecStart=/usr/local/bin/rizon_pg.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload 
+sudo systemctl enable rizon_pg 
+sudo systemctl start rizon_pg
+
+VAR=$(systemctl is-active rizon_pg.service)
+
+if [ "$VAR" = "active" ]
+then
+	echo ""
+	echo "#########################################"
+	echo "rizon_pg.service installed successfully. You can check logs by: journalctl -u rizon_pg -f"
+	echo "#########################################"
+	echo ""
+else
+	echo ""
+	echo "#########################################"
+	echo "Something went wrong. Installation failed. You can check logs by: journalctl -u rizon_pg -f"
+	echo "#########################################"
+	echo ""
+fi
+read -n 1 -s -r -p "Press any key to continue..."
+}
+
+###################################################################################
 while true; do
 
 echo ""
-echo "#########################################"
-echo "Tested on Contabo servers. Use the script at your own risk."
-echo "Attention. Some exporters is only for nodes installed using nodes.guru guides (but of course you can edit it for yourself)"
-echo "Choose what to install. For help type '99'."
-echo "1 - Node_exporter"
-echo "2 - Prometheus + Grafana"
-echo "3 - PushGateway"
-echo "4 - Kira_exporter"
-echo "5 - Nym_exporter (NodesGuru)"
-echo "6 - Aleo_Miner_exporter (NodesGuru)"
-echo "7 - Aleo_Node_exporter (NodesGuru)"
-echo "8 - Zeitgeist_exporter (NodesGuru)"
-echo "99 - HELP"
-echo "999 - EXIT"
-echo "#########################################"
+echo "######################################################################################"
+echo "# Tested on Contabo servers. Use the script at your own risk.                        #"
+echo "# Attention. Some exporters is only for nodes installed using nodes.guru guides      #"
+echo "# Choose what to install. For help type '99'.                                        #"
+echo "#  1 - Node_exporter                                                                 #"
+echo "#  2 - Prometheus + Grafana                                                          #"
+echo "#  3 - Grafana                                                                       #"
+echo "#  4 - PushGateway                                                                   #"
+echo "#  5 - Kira_exporter                                                                 #"
+echo "#  6 - Nym_exporter (NodesGuru)                                                      #"
+echo "#  7 - Aleo_Miner_exporter (NodesGuru)                                               #"
+echo "#  8 - Aleo_Node_exporter (NodesGuru)                                                #"
+echo "#  9 - Zeitgeist_exporter (NodesGuru)                                                #"
+echo "#  10 - Rizon_exporter                                                               #"
+echo "#  99 - HELP                                                                         #"
+echo "#  999 - EXIT                                                                        #"
+echo "######################################################################################"
 echo ""
 read option
 case $option in
         1) setupExporter;;
-        2) setupPrometheusGrafana;;
-        3) setupPushGateway;;
-		4) echo "Enter your pushgateway ip-address and port (example: 144.145.32.32:9091):"
+        2) setupPrometheus;;
+		3) setupGrafana;;
+        4) setupPushGateway;;
+		5) echo "Enter your pushgateway ip-address and port (example: 144.145.32.32:9091):"
 		   read PUSHGATEWAY_ADDRESS
 		   setupKiraExporter
 		   sudo firewall-cmd --zone=validator --permanent --add-port=9100/tcp
 		   sudo firewall-cmd --reload;;
-        5) echo "Enter your pushgateway ip-address and port (example: 144.145.32.32:9091):"
+        6) echo "Enter your pushgateway ip-address and port (example: 144.145.32.32:9091):"
 		   read PUSHGATEWAY_ADDRESS
 		   setupNymExporter;;
-		6) echo "Enter your pushgateway ip-address and port (example: 144.145.32.32:9091):"
-		   read PUSHGATEWAY_ADDRESS
-		   setupAleoMinerExporter;;
 		7) echo "Enter your pushgateway ip-address and port (example: 144.145.32.32:9091):"
 		   read PUSHGATEWAY_ADDRESS
-		   setupAleoNodeExporter;;
+		   setupAleoMinerExporter;;
 		8) echo "Enter your pushgateway ip-address and port (example: 144.145.32.32:9091):"
 		   read PUSHGATEWAY_ADDRESS
+		   setupAleoNodeExporter;;
+		9) echo "Enter your pushgateway ip-address and port (example: 144.145.32.32:9091):"
+		   read PUSHGATEWAY_ADDRESS
 		   setupZeitgeistExporter;;
+		10) echo "Enter your pushgateway ip-address and port (example: 144.145.32.32:9091):"
+		   read PUSHGATEWAY_ADDRESS
+		   setupRizonExporter;;
 		99) echo "#########################################"
 			echo "- Prometheus is application used for event monitoring and alerting. It records real-time metrics in a time series database"
 			echo "- Grafana is interactive visualization web application. It provides charts, graphs, and alerts for the web when connected to supported data sources (prometheus)"
