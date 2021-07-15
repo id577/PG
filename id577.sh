@@ -736,7 +736,7 @@ fi
 echo "INFO_COUNT="\$INFO_COUNT
 echo "TOTAL_IMPORTAN_MESSAGES="\$TOTAL_IMPORTAN_MESSAGES
 echo "PEERS="\$PEERS_COUNT
-2
+
 cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP
 # TYPE my_zeitgeist_isactive gauge
 \$METRIC1 \$ISACTIVE
