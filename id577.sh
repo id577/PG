@@ -925,7 +925,7 @@ echo "# Use the script at your own risk!.                                       
 echo "# Some exporters is only for nodes installed using nodes.guru guides                 #"
 echo "# Choose what to install. For help type '99'.                                        #"
 echo "#  1 - Node_exporter                                                                 #"
-echo "#  2 - Prometheus + Grafana                                                          #"
+echo "#  2 - Prometheus                                                         #"
 echo "#  3 - Grafana                                                                       #"
 echo "#  4 - PushGateway                                                                   #"
 echo "#  5 - Kira_exporter                                                                 #"
