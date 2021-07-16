@@ -355,10 +355,7 @@ NOTICE_COUNT=\$(journalctl -u nym-mixnode.service -p 5 --since "1 minute ago" --
 INFO_COUNT=\$(journalctl -u nym-mixnode.service -p 6 --since "1 minute ago" --until "now"| grep "nym-mixnode" | wc -l)
 MIXED_PACKETS_COUNT_TEMP=\$(journalctl -u nym-mixnode.service --since "1 minute ago" --until "now"| grep "nym-mixnode" | grep -E -o "mixed [0-9]*" | grep -E -o "[0-9]*") 
 
-if [ "\$MIXED_PACKETS_COUNT_TEMP" -gt "\$MIXED_PACKETS_COUNT" ] 
-then
-	MIXED_PACKETS_COUNT=\$MIXED_PACKETS_COUNT_TEMP
-fi 
+MIXED_PACKETS_COUNT=\$MIXED_PACKETS_COUNT_TEMP
 
 TOTAL_IMPORTAN_MESSAGES=\$((\$EMERGENCY_COUNT+\$ALERTS_COUNT+\$CRITICAL_COUNT+\$ERRORS_COUNT+\$WARNINGS_COUNT+\$NOTICE_COUNT))
 
