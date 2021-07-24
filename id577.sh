@@ -943,8 +943,8 @@ then STATUS=1
 else STATUS=0
 fi
 
-LATEST_CYCLE = \$(journalctl -u massa-node -p 6 --since "5 minute ago" --until "now" | grep -o -E "Starting cycle [0-9]*" | grep -o -E [0-9]* | tail -1)
-BLOCS_PRODUCED = \$(journalctl -u massa-node | grep -o -E "Staked block" | wc -l)
+LATEST_CYCLE=\$(journalctl -u massa-node -p 6 --since "5 minute ago" --until "now" | grep -o -E "Starting cycle [0-9]*" | grep -o -E [0-9]* | tail -1)
+BLOCS_PRODUCED=\$(journalctl -u massa-node | grep -o -E "Staked block" | wc -l)
 
 #DEBUG
 echo "STATUS="\$STATUS
