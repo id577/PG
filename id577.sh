@@ -374,7 +374,7 @@ echo "LAST5MINUTESIPV4="\$LAST5MINUTESIPV4
 echo "LAST5MINUTESIPV6="\$LAST5MINUTESIPV6
 echo "MIXED_PACKETS_COUNT="\$MIXED_PACKETS_COUNT
 
-cat <<EOF | curl --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP
+cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP
 # TYPE my_nym_mixnode_isactive gauge
 \$METRIC1 \$ISACTIVE
 # TYPE my_nym_mixnode_total_important_messages_count gauge
@@ -915,7 +915,101 @@ else
 fi
 read -n 1 -s -r -p "Press any key to continue..."
 }
+###################################################################################
+function setupMassaExporter {
+CV=$(systemctl list-unit-files | grep "massa_pg.service")
 
+if [ "$CV" != "" ]
+then
+	systemctl stop massa_pg
+	rm -rf /etc/systemd/system/massa_pg*
+fi
+
+sudo tee <<EOF1 >/dev/null /usr/local/bin/massa_pg.sh
+#!/bin/bash
+
+IP=\$(ip addr show eth0 | grep "inet\b" | awk '{print \$2}' | cut -d/ -f1)
+JOB="massa"
+METRIC1='my_massa_status'
+METRIC2='my_massa_latest_cycle'
+METRIC3='my_massa_blocks_produced'
+
+function getMetrics {
+
+VAR=\$(systemctl is-active massa-node)
+
+if [ "\$VAR" = "active" ]
+then STATUS=1
+else STATUS=0
+fi
+
+LATEST_CYCLE = \$(journalctl -u massa-node -p 6 --since "5 minute ago" --until "now" | grep -o -E "Starting cycle [0-9]*" | grep -o -E [0-9]* | tail -1)
+BLOCS_PRODUCED = \$(journalctl -u massa-node | grep -o -E "Staked block" | wc -l)
+
+#DEBUG
+echo "STATUS="\$STATUS
+echo "LATEST_CYCLE="\$LATEST_CYCLE
+echo "BLOCS_PRODUCED="\$BLOCS_PRODUCED
+
+cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP
+# TYPE my_massa_status gauge
+\$METRIC1 \$STATUS
+# TYPE my_massa_latest_cycle gauge
+\$METRIC2 \$LATEST_CYCLE
+# TYPE my_massa_blocks_produced gauge
+\$METRIC3 \$BLOCS_PRODUCED
+
+EOF
+}
+
+while true; do
+	getMetrics
+	echo "sleep 60 sec"
+	sleep 60
+done
+
+EOF1
+
+chmod +x /usr/local/bin/massa_pg.sh
+
+sudo tee <<EOF >/dev/null /etc/systemd/system/massa_pg.service
+[Unit]
+Description=Massa Metrics Exporter
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=root
+Group=root
+Type=simple
+ExecStart=/usr/local/bin/massa_pg.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload 
+sudo systemctl enable massa_pg 
+sudo systemctl start massa_pg
+
+VAR=$(systemctl is-active massa_pg.service)
+
+if [ "$VAR" = "active" ]
+then
+	echo ""
+	echo "#########################################"
+	echo "massa_pg.service installed successfully. You can check logs by: journalctl -u massa_pg -f"
+	echo "#########################################"
+	echo ""
+else
+	echo ""
+	echo "#########################################"
+	echo "Something went wrong. Installation failed. You can check logs by: journalctl -u massa_pg -f"
+	echo "#########################################"
+	echo ""
+fi
+read -n 1 -s -r -p "Press any key to continue..."
+}
 ###################################################################################
 while true; do
 
@@ -925,7 +1019,7 @@ echo "# Use the script at your own risk!.                                       
 echo "# Some exporters is only for nodes installed using nodes.guru guides                 #"
 echo "# Choose what to install. For help type '99'.                                        #"
 echo "#  1 - Node_exporter                                                                 #"
-echo "#  2 - Prometheus                                                         #"
+echo "#  2 - Prometheus                                                                    #"
 echo "#  3 - Grafana                                                                       #"
 echo "#  4 - PushGateway                                                                   #"
 echo "#  5 - Kira_exporter                                                                 #"
@@ -934,6 +1028,7 @@ echo "#  7 - Aleo_Miner_exporter (NodesGuru)                                    
 echo "#  8 - Aleo_Node_exporter (NodesGuru)                                                #"
 echo "#  9 - Zeitgeist_exporter (NodesGuru)                                                #"
 echo "#  10 - Rizon_exporter                                                               #"
+echo "#  11 - Massa_exporter                                                               #"
 echo "#  99 - HELP                                                                         #"
 echo "#  999 - EXIT                                                                        #"
 echo "######################################################################################"
@@ -964,6 +1059,9 @@ case $option in
 		10) echo "Enter your pushgateway ip-address and port (example: 144.145.32.32:9091):"
 		   read PUSHGATEWAY_ADDRESS
 		   setupRizonExporter;;
+		11) echo "Enter your pushgateway ip-address and port (example: 144.145.32.32:9091):"
+		   read PUSHGATEWAY_ADDRESS
+		   setupMassaExporter;;
 		99) echo "#########################################"
 			echo "- Prometheus is application used for event monitoring and alerting. It records real-time metrics in a time series database"
 			echo "- Grafana is interactive visualization web application. It provides charts, graphs, and alerts for the web when connected to supported data sources (prometheus)"
