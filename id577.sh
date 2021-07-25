@@ -727,13 +727,13 @@ INFO_COUNT=\$(journalctl -u zeitgeistd -p 6 --since "1 minute ago" --until "now"
 
 TOTAL_IMPORTAN_MESSAGES=\$((\$EMERGENCY_COUNT+\$ALERTS_COUNT+\$CRITICAL_COUNT+\$ERRORS_COUNT+\$WARNINGS_COUNT+\$NOTICE_COUNT))
 
-PEERS_COUNT=\$(journalctl -u zeitgeistd -n 2 | grep -E -o "[0-9]* peers" | grep -E -o [0-9]*)
+PEERS_COUNT=\$(journalctl -u zeitgeistd -n 10 | grep -E -o "[0-9]* peers" | grep -E -o [0-9]*| tail -1)
 if [ "\$PEERS_COUNT" = "" ]
 then
 	PEERS_COUNT=0
 fi
 
-BLOCKS_HEIGHT=\$(journalctl -u zeitgeistd -n 2 | grep -E -o "best: #[0-9]*" | grep -E -o [0-9]* | tail -1)
+BLOCKS_HEIGHT=\$(journalctl -u zeitgeistd -n 10 | grep -E -o "best: #[0-9]*" | grep -E -o [0-9]* | tail -1)
 if [ "\$BLOCKS_HEIGHTT" = "" ]
 then
 	BLOCKS_HEIGHT=0
@@ -767,7 +767,7 @@ cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/inst
 # TYPE my_zeitgeist_info_count gauge
 \$METRIC10 \$INFO_COUNT
 # TYPE my_zeitgeist_blocks_height gauge
-\$METRIC10 \$BLOCKS_HEIGHT
+\$METRIC11 \$BLOCKS_HEIGHT
 EOF
 }
 
