@@ -734,7 +734,7 @@ then
 fi
 
 BLOCKS_HEIGHT=\$(journalctl -u zeitgeistd -n 10 | grep -E -o "best: #[0-9]*" | grep -E -o [0-9]* | tail -1)
-if [ "\$BLOCKS_HEIGHTT" = "" ]
+if [ "\$BLOCKS_HEIGHT" = "" ]
 then
 	BLOCKS_HEIGHT=0
 fi
