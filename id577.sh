@@ -706,6 +706,7 @@ METRIC7='my_zeitgeist_critical_count'
 METRIC8='my_zeitgeist_notice_count'
 METRIC9='my_zeitgeist_peers_count'
 METRIC10='my_zeitgeist_info_count'
+METRIC11='my_zeitgeist_blocks_height'
 
 function getMetrics {
 
@@ -732,10 +733,17 @@ then
 	PEERS_COUNT=0
 fi
 
+BLOCKS_HEIGHT=\$(journalctl -u zeitgeistd -n 2 | grep -E -o "best: #[0-9]*" | grep -E -o [0-9]* | tail -1)
+if [ "\$BLOCKS_HEIGHTT" = "" ]
+then
+	BLOCKS_HEIGHT=0
+fi
+
 #DEBUG
 echo "INFO_COUNT="\$INFO_COUNT
 echo "TOTAL_IMPORTAN_MESSAGES="\$TOTAL_IMPORTAN_MESSAGES
 echo "PEERS="\$PEERS_COUNT
+echo "BLOCKS_HEIGHT="\$BLOCKS_HEIGHT
 
 cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP
 # TYPE my_zeitgeist_isactive gauge
@@ -758,6 +766,8 @@ cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/inst
 \$METRIC5 \$WARNINGS_COUNT
 # TYPE my_zeitgeist_info_count gauge
 \$METRIC10 \$INFO_COUNT
+# TYPE my_zeitgeist_blocks_height gauge
+\$METRIC10 \$BLOCKS_HEIGHT
 EOF
 }
 
