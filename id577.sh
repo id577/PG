@@ -15,8 +15,9 @@ then
 	if [ "$IP_ADDRESS" == "" ]
 	then 
 		read -p "IP-adress not defined. Please enter correct IP-adress: " IP_ADDRESS
-		echo 'export IP_ADDRESS='${IP_ADDRESS} >> $HOME/.bash_profile
 	fi
+	echo 'export IP_ADDRESS='${IP_ADDRESS}  >> $HOME/.bash_profile
+	source ~/.bash_profile
 fi
 
 echo -e "Your IP-address is: $IP_ADDRESS"
@@ -462,6 +463,7 @@ if [ ! $PUSHGATEWAY_ADDRESS ]
 then
 	read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091): " PUSHGATEWAY_ADDRESS
 	echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
+	source ~/.bash_profile
 fi
 
 echo -e "Aleo_exporter installation starts..."
