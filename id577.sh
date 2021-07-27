@@ -457,7 +457,7 @@ function installAleoExporter {
 
 read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091): " pushgateway_address
 
-echo -e "Aleo_exporter installation starts..."
+echo -e -e "Aleo_exporter installation starts..."
 sleep 3
 
 aleo_service_name=""
@@ -466,7 +466,7 @@ aleo_miner_service_name=""
 CV=$(systemctl list-unit-files | grep "aleo_exporter.service")
 if [ "$CV" != "" ]
 then
-	echo "Founded aleo_exporter.service. Deleting..."
+	echo -e "Founded aleo_exporter.service. Deleting..."
 	systemctl stop aleo_exporter && systemctl disable aleo_exporter
 	rm -rf /usr/local/bin/aleo_exporter.sh
 	rm -rf /etc/systemd/system/aleo_exporter*
@@ -475,44 +475,45 @@ fi
 CV=$(systemctl list-unit-files | grep "aleo.service")
 if [ "$CV" != "" ]
 then
-	echo "aleo.service founded!"
+	echo -e "aleo.service founded!"
 	aleo_service_name="aleo.service"
 fi
 
 CV=$(systemctl list-unit-files | grep "aleod.service")
 if [ "$CV" != "" ]
 then
-	echo "aleod.service founded!"
+	echo -e "aleod.service founded!"
 	aleo_service_name="aleod.service"
 fi
 
 CV=$(systemctl list-unit-files | grep "aleo-miner.service")
 if [ "$CV" != "" ]
 then
-	echo "aleo-miner.service founded!"
+	echo -e "aleo-miner.service founded!"
 	aleo_miner_service_name="aleo-miner.service"
 fi
 
 CV=$(systemctl list-unit-files | grep "aleod-miner.service")
 if [ "$CV" != "" ]
 then
-	echo "aleod-miner.service founded!"
+	echo -e "aleod-miner.service founded!"
 	aleo_miner_service_name="aleod-miner.service"
 fi
 
 if [ "$aleo_service_name" == "" ] && [ "$aleo_miner_service_name" == "" ]
 then
-	echo "No aleo service was founded. Are you sure that aleo is installed as a service?"
-	echo "You can mannualy change variables 'aleo_service_name' 'aleo_miner_service_name' in script file /usr/local/bin/aleo_exporter"
-	echo "if your aleo is not installed as a service, some metrics will not work!"
+	echo -e "No aleo service was founded. Are you sure that aleo is installed as a service?"
+	echo -e "You can mannualy change variables 'aleo_service_name' 'aleo_miner_service_name' in script file /usr/local/bin/aleo_exporter"
+	echo -e "if your aleo is not installed as a service, some metrics will not work!"
 	read -n 1 -s -r -p "Press any key to continue or ctrl+c to abort installion"
 fi
-sudo tee <<EOF1 >/dev/null /usr/local/bin/aleo_exporter.sh
 
+sudo tee <<EOF1 >/dev/null /usr/local/bin/aleo_exporter.sh
 #!/bin/bash
+
 job="aleo"
 metric_1='my_aleo_peers_count'
-metric_2='my_aleo_status
+metric_2='my_aleo_status'
 metric_3='my_aleo_blocks_count'
 metric_4='my_aleo_is_synced'
 metric_5='my_aleo_blocks_mined_count'
@@ -554,26 +555,27 @@ then blocks_mined_count=0
 fi
 
 #LOGS
-echo "Aleo status report: is_active=\${is_active}, is_synced=\${is_synced}, peers_count=\${peers_count}, blocks_count=\${blocks_count}, blocks_mined_count=\${blocks_mined_count}
+echo -e "Aleo status report: is_active=\${is_active}, is_synced=\${is_synced}, peers_count=\${peers_count}, blocks_count=\${blocks_count}, blocks_mined_count=\${blocks_mined_count}
 
-cat <<EOF | curl -s --data-binary @- $pushgateway_address/metrics/job/\$job/instance/\$IP
-# TYPE ${metric_1} gauge
+cat <<EOF | curl -s --data-binary @- $pushgateway_address/metrics/job/\$job/instance/$IP
+# TYPE my_aleo_peers_count gauge
 \$metric_1 \$peers_count
-# TYPE ${metric_2} gauge
+# TYPE my_aleo_status gauge
 \$metric_2 \$is_active
-# TYPE ${metric_3} gauge
+# TYPE my_aleo_blocks_count gauge
 \$metric_3 \$blocks_count
-# TYPE ${metric_4} gauge
+# TYPE my_aleo_is_synced gauge
 \$metric_4 \$is_synced
-# TYPE ${metric_5} gauge
+# TYPE my_aleo_blocks_mined_count gauge
 \$metric_5 \$blocks_mined_count
-# TYPE ${metric_6} gauge
-\$metric_5 \$is_active_miner
+# TYPE my_aleo_miner_status gauge
+\$metric_6 \$is_active_miner
 EOF
 }
+
 while true; do
 	getMetrics
-	echo "sleep 60 sec"
+	echo -e "sleep 60 sec"
 	sleep 60
 done
 EOF1
@@ -600,13 +602,13 @@ VAR=$(systemctl is-active aleo_exporter.service)
 
 if [ "$VAR" = "active" ]
 then
-	echo ""
-	echo "aleo_exporter.service \e[32minstalled and works\e[39m! You can check logs by: journalctl -u aleo_exporter -f"
-	echo ""
+	echo -e ""
+	echo -e "aleo_exporter.service \e[32minstalled and works\e[39m! You can check logs by: journalctl -u aleo_exporter -f"
+	echo -e ""
 else
-	echo ""
-	echo "Something went wrong. \e[31mInstallation failed\e[39m! You can check logs by: journalctl -u aleo_exporter -f"
-	echo ""
+	echo -e ""
+	echo -e "Something went wrong. \e[31mInstallation failed\e[39m! You can check logs by: journalctl -u aleo_exporter -f"
+	echo -e ""
 fi
 read -n 1 -s -r -p "Press any key to continue..."
 
