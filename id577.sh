@@ -508,21 +508,15 @@ then
 	read -n 1 -s -r -p "Press any key to continue or ctrl+c to abort installion"
 fi
 
-node_block="is_active=\$(systemctl is-active ${aleo_service_name})
-if [ "\$is_active" = "active" ]
-then is_active=1
-else is_active=0
-fi"
 
-miner_block="is_active_miner=\$(systemctl is-active ${aleo_miner_service_name})
-if [ "\$is_active_miner" = "active" ]
-then is_active_miner=1
-else is_active_miner=0
-fi"
+
+
 
 sudo tee <<EOF1 >/dev/null /usr/local/bin/aleo_exporter.sh
 #!/bin/bash
 
+aleo_service_name="${aleo_service_name}"
+aleo_miner_service_name="${aleo_miner_service_name"
 job="aleo"
 metric_1='my_aleo_peers_count'
 metric_2='my_aleo_status'
@@ -549,9 +543,23 @@ if [ "\$blocks_count" = "" ]
 then blocks_count=0
 fi
 
-$node_block
+if [ "\$aleo_service_name" != "" ] 
+then is_active=\$(systemctl is-active ${aleo_service_name})
+	if [ "\$is_active" = "active" ]
+	then is_active=1
+	else is_active=0
+	fi
+else is_active=0
+fi
 
-$miner_block
+if [ "\$aleo_miner_service_name" != "" ] 
+then is_active_miner=\$(systemctl is-active ${aleo_miner_service_name})
+	if [ "\$is_active_miner" = "active" ]
+	then is_active_miner=1
+	else is_active_miner=0
+	fi
+else is_active_miner=0
+fi
 
 blocks_mined_count=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getnodestats", "params": [] }' -H 'content-type: application/json' http://localhost:3030 | grep -E -o "blocks_mined\":[0-9]*" | grep -E -o "[0-9]*")
 if [ "\$blocks_mined_count" = "" ]
