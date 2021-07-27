@@ -454,15 +454,56 @@ read -n 1 -s -r -p "Press any key to continue..."
 ###################################################################################
 function setupAleoExporter {
 
-CV=$(systemctl list-unit-files | grep "aleo_exporter.service")
+echo -e "Aleo_exporter installation starts..."
+sleep 3
 
+aleo_service_name=""
+aleo_miner_service_name=""
+
+CV=$(systemctl list-unit-files | grep "aleo_exporter.service")
 if [ "$CV" != "" ]
 then
-	systemctl stop aleo_exporter
+	echo "Founded aleo_exporter.service. Deleting..."
+	systemctl stop aleo_exporter && systemctl disable aleo_exporter
 	rm -rf /usr/local/bin/aleo_exporter.sh
 	rm -rf /etc/systemd/system/aleo_exporter*
 fi
 
+CV=$(systemctl list-unit-files | grep "aleo.service")
+if [ "$CV" != "" ]
+then
+	echo "aleo.service founded!"
+	aleo_service_name="aleo.service"
+fi
+
+CV=$(systemctl list-unit-files | grep "aleod.service")
+f [ "$CV" != "" ]
+then
+	echo "aleod.service founded!"
+	aleo_service_name="aleod.service"
+fi
+
+CV=$(systemctl list-unit-files | grep "aleo-miner.service")
+f [ "$CV" != "" ]
+then
+	echo "aleo-miner.service founded!"
+	aleo_miner_service_name="aleo-miner.service"
+fi
+
+CV=$(systemctl list-unit-files | grep "aleod-miner.service")
+f [ "$CV" != "" ]
+then
+	echo "aleod-miner.service founded!"
+	aleo_miner_service_name="aleod-miner.service"
+fi
+
+if [ "$aleo_service_name" == "" ] && [ "$aleo_miner_service_name" == "" ]
+then
+	echo "No aleo service was founded. Are you sure that aleo is installed as a service?"
+	echo "You can mannualy change variables 'aleo_service_name' 'aleo_miner_service_name' in script file /usr/local/bin/aleo_exporter"
+	echo "if your aleo is not installed as a service, some metrics will not work!"
+	read -n 1 -s -r -p "Press any key to continue or ctrl+c to abort installion"
+	
 sudo tee <<EOF1 >/dev/null /usr/local/bin/aleo_exporter.sh
 
 #!/bin/bash
@@ -472,6 +513,7 @@ metric_2='my_aleo_status
 metric_3='my_aleo_blocks_count'
 metric_4='my_aleo_is_synced'
 metric_5='my_aleo_blocks_mined_count'
+metric_6='my_aleo_miner_status'
 
 function getMetrics {
 
@@ -491,10 +533,16 @@ if [ "\$blocks_count" = "" ]
 then blocks_count=0
 fi
 
-is_active=\$(systemctl is-active aleod-miner.service)
+is_active=\$(systemctl is-active ${aleo_service_name})
 if [ "\$is_active" = "active" ]
 then is_active=1
 else is_active=0
+fi
+
+is_active_miner=\$(systemctl is-active ${aleo_miner_service_name})
+if [ "\$is_active_miner" = "active" ]
+then is_active_miner=1
+else is_active_miner=0
 fi
 
 blocks_mined_count=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getnodestats", "params": [] }' -H 'content-type: application/json' http://localhost:3030 | grep -E -o "blocks_mined\":[0-9]*" | grep -E -o "[0-9]*")
@@ -516,6 +564,8 @@ cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/inst
 \$metric_4 \$is_synced
 # TYPE ${metric_5} gauge
 \$metric_5 \$blocks_mined_count
+# TYPE ${metric_6} gauge
+\$metric_5 \$is_active_miner
 EOF
 }
 while true; do
@@ -569,6 +619,7 @@ echo -e " 3 - Grafana"
 echo -e " 4 - PushGateway"
 echo -e " 5 - Loki"
 echo -e " 6 - Promtail"
+echo -e " 7 - Aleo exporter"
 echo -e " 0 - DELETE old custom exporters (such as nym_pg, kira_pg etc.)"                                                                     
 echo -e " x - EXIT"
 echo -e ""
