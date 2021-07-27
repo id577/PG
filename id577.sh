@@ -17,6 +17,7 @@ if [ "$IP" == "" ]
 fi
 
 echo -e "Your IP-address is: $IP"
+sleep 2
 
 ###################################################################################
 function clearInstance {
@@ -452,7 +453,9 @@ fi
 read -n 1 -s -r -p "Press any key to continue..."
 }
 ###################################################################################
-function setupAleoExporter {
+function installAleoExporter {
+
+read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091): " pushgateway_address
 
 echo -e "Aleo_exporter installation starts..."
 sleep 3
@@ -553,7 +556,7 @@ fi
 #LOGS
 echo "Aleo status report: is_active=\${is_active}, is_synced=\${is_synced}, peers_count=\${peers_count}, blocks_count=\${blocks_count}, blocks_mined_count=\${blocks_mined_count}
 
-cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP
+cat <<EOF | curl -s --data-binary @- $pushgateway_address/metrics/job/\$job/instance/\$IP
 # TYPE ${metric_1} gauge
 \$metric_1 \$peers_count
 # TYPE ${metric}_2 gauge
@@ -631,6 +634,7 @@ case $option in
         4) installPushGateway;;
 		5) installLoki;;
         6) installPromtail;;
+		7) installAleoExporter;;
 		0) clearInstance;;
 		"x") exit
 esac
