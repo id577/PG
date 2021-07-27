@@ -455,9 +455,14 @@ read -n 1 -s -r -p "Press any key to continue..."
 ###################################################################################
 function installAleoExporter {
 
-read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091): " pushgateway_address
+if [ ! $PUSHGATEWAY_ADDRESS ] 
+then
+	read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091): " PUSHGATEWAY_ADDRESS
+	echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
+fi
 
-echo -e -e "Aleo_exporter installation starts..."
+echo -e "Aleo_exporter installation starts..."
+echo -e "Pushgateway ip-address is: ${PUSHGATEWAY_ADDRESS}"
 sleep 3
 
 aleo_service_name=""
@@ -507,10 +512,6 @@ then
 	echo -e "if your aleo is not installed as a service, some metrics will not work!"
 	read -n 1 -s -r -p "Press any key to continue or ctrl+c to abort installion"
 fi
-
-
-
-
 
 sudo tee <<EOF1 >/dev/null /usr/local/bin/aleo_exporter.sh
 #!/bin/bash
@@ -569,7 +570,7 @@ fi
 #LOGS
 echo -e "Aleo status report: aleo_is_active=\${is_active}, aleo_miner_is_active=\${is_active_miner}, is_synced=\${is_synced}, peers_count=\${peers_count}, blocks_count=\${blocks_count}, blocks_mined_count=\${blocks_mined_count}"
 
-cat <<EOF | curl -s --data-binary @- $pushgateway_address/metrics/job/\$job/instance/$IP
+cat <<EOF | curl -s --data-binary @- \$PUSHGATEWAY_ADDRESS/metrics/job/\$job/instance/$IP
 # TYPE my_aleo_peers_count gauge
 \$metric_1 \$peers_count
 # TYPE my_aleo_status gauge
