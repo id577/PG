@@ -364,16 +364,12 @@ VAR=$(systemctl is-active loki.service)
 if [ "$VAR" = "active" ]
 then
 	echo -e ""
-	echo -e "#########################################"
 	echo -e "loki v${LOKI_VERSION} \e[32minstalled and works\e[39m! You can check logs by: journalctl -u loki -f"
 	echo -e "Don't forget to add data source (loki) in grafana interface."
-	echo -e "#########################################"
 	echo -e ""
 else
 	echo -e ""
-	echo -e "#########################################"
 	echo -e "Something went wrong. \e[31mInstallation failed\e[39m! You can check logs by: journalctl -u loki -f"
-	echo -e "#########################################"
 	echo -e ""
 fi
 
@@ -445,22 +441,123 @@ VAR=$(systemctl is-active promtail.service)
 if [ "$VAR" = "active" ]
 then
 	echo -e ""
-	echo -e "#########################################"
-	echo -e "Promtail v${PROMTAIL_VERSION} \e[32minstalled and works\e[39m    . You can check logs by: journalctl -u promtail -f"
-	echo -e "#########################################"
+	echo -e "Promtail v${PROMTAIL_VERSION} \e[32minstalled and works\e[39m! You can check logs by: journalctl -u promtail -f"
 	echo -e ""
 else
 	echo -e ""
-	echo -e "#########################################"
 	echo -e "Something went wrong. \e[31mInstallation failed\e[39m! You can check logs by: journalctl -u promtail -f"
-	echo -e "#########################################"
 	echo -e ""
 fi
 
 read -n 1 -s -r -p "Press any key to continue..."
 }
 ###################################################################################
+function setupAleoExporter {
 
+CV=$(systemctl list-unit-files | grep "aleo_exporter.service")
+
+if [ "$CV" != "" ]
+then
+	systemctl stop aleo_exporter
+	rm -rf /usr/local/bin/aleo_exporter.sh
+	rm -rf /etc/systemd/system/aleo_exporter*
+fi
+
+sudo tee <<EOF1 >/dev/null /usr/local/bin/aleo_exporter.sh
+
+#!/bin/bash
+job="aleo"
+metric_1='my_aleo_peers_count'
+metric_2='my_aleo_status
+metric_3='my_aleo_blocks_count'
+metric_4='my_aleo_is_synced'
+metric_5='my_aleo_blocks_mined_count'
+
+function getMetrics {
+
+peers_count=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getpeerinfo", "params": [] }' -H 'content-type: application/json' http://localhost:3030/ | grep -E -o "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)" | wc -l)
+f [ "\$peers_count" = "" ]
+then peers_count=0
+fi
+
+is_synced=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getnodeinfo", "params": [] }' -H 'content-type: application/json' http://localhost:3030 | grep -E -o "is_syncing\":[A-Za-z]*" | grep -E -o "(true|false)")
+if [ "\$is_synced" = "true" ]
+then is_synced=1
+else is_synced=0
+fi
+
+blocks_count=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getblockcount", "params": [] }' -H 'content-type: application/json' http://localhost:3030 | grep -E -o "result\":[0-9]*" | grep -E -o "[0-9]*")
+if [ "\$blocks_count" = "" ]
+then blocks_count=0
+fi
+
+is_active=\$(systemctl is-active aleod-miner.service)
+if [ "\$is_active" = "active" ]
+then is_active=1
+else is_active=0
+fi
+
+blocks_mined_count=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getnodestats", "params": [] }' -H 'content-type: application/json' http://localhost:3030 | grep -E -o "blocks_mined\":[0-9]*" | grep -E -o "[0-9]*")
+if [ "\$blocks_mined_count" = "" ]
+then blocks_mined_count=0
+fi
+
+#LOGS
+echo "Aleo status report: is_active=\${is_active}, is_synced=\${is_synced}, peers_count=\${peers_count}, blocks_count=\${blocks_count}, blocks_mined_count=\${blocks_mined_count}
+
+cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP
+# TYPE ${metric_1} gauge
+\$metric_1 \$peers_count
+# TYPE ${metric}_2 gauge
+\$metric_2 \$is_active
+# TYPE ${metric_3} gauge
+\$metric_3 \$blocks_count
+# TYPE ${metric_4} gauge
+\$metric_4 \$is_synced
+# TYPE ${metric_5} gauge
+\$metric_5 \$blocks_mined_count
+EOF
+}
+while true; do
+	getMetrics
+	echo "sleep 60 sec"
+	sleep 60
+done
+EOF1
+
+chmod +x /usr/local/bin/aleo_exporter.sh
+
+sudo tee <<EOF >/dev/null /etc/systemd/system/aleo_exporter.service
+[Unit]
+Description=Aleo Metrics Exporter
+Wants=network-online.target
+After=network-online.target
+[Service]
+User=root
+Group=root
+Type=simple
+ExecStart=/usr/local/bin/aleo_exporter.sh
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload && sudo systemctl enable aleo_exporter && sudo systemctl start aleo_exporter
+
+VAR=$(systemctl is-active aleo_exporter.service)
+
+if [ "$VAR" = "active" ]
+then
+	echo ""
+	echo "aleo_exporter.service \e[32minstalled and works\e[39m! You can check logs by: journalctl -u aleo_exporter -f"
+	echo ""
+else
+	echo ""
+	echo "Something went wrong. \e[31mInstallation failed\e[39m! You can check logs by: journalctl -u aleo_exporter -f"
+	echo ""
+fi
+read -n 1 -s -r -p "Press any key to continue..."
+}
+###################################################################################
 while true; do
 
 echo -e ""
@@ -472,7 +569,7 @@ echo -e " 3 - Grafana"
 echo -e " 4 - PushGateway"
 echo -e " 5 - Loki"
 echo -e " 6 - Promtail"
-echo -e " 0 - DELETE custom exporters (nym_pg, kira_pg etc.)"                                                                     
+echo -e " 0 - DELETE old custom exporters (such as nym_pg, kira_pg etc.)"                                                                     
 echo -e " x - EXIT"
 echo -e ""
 read option
