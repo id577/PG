@@ -494,7 +494,7 @@ then
 fi
 
 CV=$(systemctl list-unit-files | grep "aleod-miner.service")
-f [ "$CV" != "" ]
+if [ "$CV" != "" ]
 then
 	echo "aleod-miner.service founded!"
 	aleo_miner_service_name="aleod-miner.service"
