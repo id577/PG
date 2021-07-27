@@ -9,11 +9,12 @@ PUSHGATEWAY_VERSION='1.4.1'
 LOKI_VERSION='2.2.1'
 PROMTAIL_VERSION='2.2.1'
 
+source ~/.bash_profile
 if [ ! $IP_ADDRESS ]
-then 
-	IP_ADDRESS=$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
-	if [ "$IP_ADDRESS" == "" ]
 	then 
+	IP_ADDRESS=$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
+	if [ "$IP_ADDRESS" =  "" ]
+		then 
 		read -p "IP-adress not defined. Please enter correct IP-adress: " IP_ADDRESS
 	fi
 	echo 'export IP_ADDRESS='${IP_ADDRESS}  >> $HOME/.bash_profile
@@ -522,7 +523,7 @@ sudo tee <<EOF1 >/dev/null /usr/local/bin/aleo_exporter.sh
 #!/bin/bash
 
 aleo_service_name="${aleo_service_name}"
-aleo_miner_service_name="${aleo_miner_service_name"
+aleo_miner_service_name="${aleo_miner_service_name}"
 job="aleo"
 metric_1='my_aleo_peers_count'
 metric_2='my_aleo_status'
