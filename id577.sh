@@ -506,7 +506,7 @@ then
 	echo "You can mannualy change variables 'aleo_service_name' 'aleo_miner_service_name' in script file /usr/local/bin/aleo_exporter"
 	echo "if your aleo is not installed as a service, some metrics will not work!"
 	read -n 1 -s -r -p "Press any key to continue or ctrl+c to abort installion"
-	
+fi
 sudo tee <<EOF1 >/dev/null /usr/local/bin/aleo_exporter.sh
 
 #!/bin/bash
@@ -559,7 +559,7 @@ echo "Aleo status report: is_active=\${is_active}, is_synced=\${is_synced}, peer
 cat <<EOF | curl -s --data-binary @- $pushgateway_address/metrics/job/\$job/instance/\$IP
 # TYPE ${metric_1} gauge
 \$metric_1 \$peers_count
-# TYPE ${metric}_2 gauge
+# TYPE ${metric_2} gauge
 \$metric_2 \$is_active
 # TYPE ${metric_3} gauge
 \$metric_3 \$blocks_count
@@ -609,6 +609,7 @@ else
 	echo ""
 fi
 read -n 1 -s -r -p "Press any key to continue..."
+
 }
 ###################################################################################
 while true; do
@@ -639,5 +640,3 @@ case $option in
 		"x") exit
 esac
 done
-
-
