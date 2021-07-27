@@ -508,6 +508,18 @@ then
 	read -n 1 -s -r -p "Press any key to continue or ctrl+c to abort installion"
 fi
 
+node_block="is_active=\$(systemctl is-active ${aleo_service_name})
+if [ "\$is_active" = "active" ]
+then is_active=1
+else is_active=0
+fi"
+
+miner_block="is_active_miner=\$(systemctl is-active ${aleo_miner_service_name})
+if [ "\$is_active_miner" = "active" ]
+then is_active_miner=1
+else is_active_miner=0
+fi"
+
 sudo tee <<EOF1 >/dev/null /usr/local/bin/aleo_exporter.sh
 #!/bin/bash
 
@@ -522,7 +534,7 @@ metric_6='my_aleo_miner_status'
 function getMetrics {
 
 peers_count=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getpeerinfo", "params": [] }' -H 'content-type: application/json' http://localhost:3030/ | grep -E -o "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)" | wc -l)
-f [ "\$peers_count" = "" ]
+if [ "\$peers_count" = "" ]
 then peers_count=0
 fi
 
@@ -537,17 +549,9 @@ if [ "\$blocks_count" = "" ]
 then blocks_count=0
 fi
 
-is_active=\$(systemctl is-active ${aleo_service_name})
-if [ "\$is_active" = "active" ]
-then is_active=1
-else is_active=0
-fi
+$node_block
 
-is_active_miner=\$(systemctl is-active ${aleo_miner_service_name})
-if [ "\$is_active_miner" = "active" ]
-then is_active_miner=1
-else is_active_miner=0
-fi
+$miner_block
 
 blocks_mined_count=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getnodestats", "params": [] }' -H 'content-type: application/json' http://localhost:3030 | grep -E -o "blocks_mined\":[0-9]*" | grep -E -o "[0-9]*")
 if [ "\$blocks_mined_count" = "" ]
@@ -555,7 +559,7 @@ then blocks_mined_count=0
 fi
 
 #LOGS
-echo -e "Aleo status report: is_active=\${is_active}, is_synced=\${is_synced}, peers_count=\${peers_count}, blocks_count=\${blocks_count}, blocks_mined_count=\${blocks_mined_count}
+echo -e "Aleo status report: aleo_is_active=\${is_active}, aleo_miner_is_active=\${is_active_miner}, is_synced=\${is_synced}, peers_count=\${peers_count}, blocks_count=\${blocks_count}, blocks_mined_count=\${blocks_mined_count}"
 
 cat <<EOF | curl -s --data-binary @- $pushgateway_address/metrics/job/\$job/instance/$IP
 # TYPE my_aleo_peers_count gauge
