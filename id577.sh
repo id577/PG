@@ -9,14 +9,17 @@ PUSHGATEWAY_VERSION='1.4.1'
 LOKI_VERSION='2.2.1'
 PROMTAIL_VERSION='2.2.1'
 
-IP=$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
-
-if [ "$IP" == "" ]
+if [ ! $IP_ADDRESS ]
+then 
+	IP_ADDRESS=$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
+	if [ "$IP_ADDRESS" == "" ]
 	then 
-		read -p "IP-adress not defined. Please enter correct IP-adress: " IP
+		read -p "IP-adress not defined. Please enter correct IP-adress: " IP_ADDRESS
+		echo 'export IP_ADDRESS='${IP_ADDRESS} >> $HOME/.bash_profile
+	fi
 fi
 
-echo -e "Your IP-address is: $IP"
+echo -e "Your IP-address is: $IP_ADDRESS"
 sleep 2
 
 ###################################################################################
@@ -83,7 +86,7 @@ VAR=$(systemctl is-active node_exporter.service)
 if [ "$VAR" = "active" ]
 then
 	echo -e ""
-	echo -e "node_exporter v$NODE_EXPORTER_VERSION \e[32minstalled and works\e[39m    ! Use curl -s http://$IP:9100/metrics to check Node_exporter."
+	echo -e "node_exporter v$NODE_EXPORTER_VERSION \e[32minstalled and works\e[39m    ! Use curl -s http://$IP_ADDRESS:9100/metrics to check Node_exporter."
 	echo -e "Dont't forget to add targets for your prometheus. Use 'sudo nano /etc/prometheus/prometheus.yml' on your server with prometheus."
 	echo -e "For additional help go to https://prometheus.io/docs/prometheus/latest/getting_started/"
 	echo -e ""
@@ -166,7 +169,7 @@ VAR=$(systemctl is-active prometheus.service)
 if [ "$VAR" = "active" ]
 then
 	echo -e ""
-	echo -e "Prometheus v$PROMETHEUS_VERSION \e[32minstalled and works\e[39m! Go to http://$IP:9090/ to check it"
+	echo -e "Prometheus v$PROMETHEUS_VERSION \e[32minstalled and works\e[39m! Go to http://$IP_ADDRESS:9090/ to check it"
 	echo -e ""
 else
 	echo -e ""
@@ -195,7 +198,7 @@ VAR=$(systemctl is-active grafana.service)
 if [ "$VAR" = "active" ]
 then
 	echo -e ""
-	echo -e "Grafana v$GRAFANA_VERSION \e[32minstalled and works\e[39m! Go to http://$IP:3000/ to enter grafana"
+	echo -e "Grafana v$GRAFANA_VERSION \e[32minstalled and works\e[39m! Go to http://$IP_ADDRESS:3000/ to enter grafana"
 	echo -e "Don't forget to add data source in grafana interface. For additional help go to https://grafana.com/docs/grafana/latest/datasources/add-a-data-source/"
 	echo -e ""
 else
@@ -241,7 +244,7 @@ VAR=$(systemctl is-active pushgateway.service)
 if [ "$VAR" = "active" ]
 then
 	echo -e ""
-	echo -e "Pushgateway 1.4.1 \e[32minstalled and works\e[39m!. Go to http://$IP:9091 to check it."
+	echo -e "Pushgateway 1.4.1 \e[32minstalled and works\e[39m!. Go to http://$IP_ADDRESS:9091 to check it."
 	echo -e "Don't forget to add target (${IP}:9091) in your prometheus config file. Use 'sudo nano /etc/prometheus/prometheus.yml' on your server with prometheus"
 	echo -e "Your pushgataway address: ${IP}:9091"
 	echo -e ""
@@ -415,7 +418,7 @@ scrape_configs:
       max_age: 12h
       labels:
         job: $JOB_NAME
-        host: $IP
+        host: $IP_ADDRESS
     relabel_configs:
       - source_labels: ['__journal__systemd_unit']
         target_label: 'unit'
@@ -570,7 +573,7 @@ fi
 #LOGS
 echo -e "Aleo status report: aleo_is_active=\${is_active}, aleo_miner_is_active=\${is_active_miner}, is_synced=\${is_synced}, peers_count=\${peers_count}, blocks_count=\${blocks_count}, blocks_mined_count=\${blocks_mined_count}"
 
-cat <<EOF | curl -s --data-binary @- \$PUSHGATEWAY_ADDRESS/metrics/job/\$job/instance/$IP
+cat <<EOF | curl -s --data-binary @- \$PUSHGATEWAY_ADDRESS/metrics/job/\$job/instance/$IP_ADDRESS
 # TYPE my_aleo_peers_count gauge
 \$metric_1 \$peers_count
 # TYPE my_aleo_status gauge
