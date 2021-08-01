@@ -781,6 +781,7 @@ echo -e " 4 - PushGateway"
 echo -e " 5 - Loki"
 echo -e " 6 - Promtail"
 echo -e " 7 - Aleo exporter"
+echo -e " 8 - Kira exporter"
 echo -e " 0 - DELETE old custom exporters (such as nym_pg, kira_pg etc.)"                                                                     
 echo -e " x - EXIT"
 echo -e ""
@@ -793,6 +794,7 @@ case $option in
 		5) installLoki;;
         6) installPromtail;;
 		7) installAleoExporter;;
+		8) installKiraExporter;;
 		0) clearInstance;;
 		"x") exit
 esac
