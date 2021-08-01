@@ -762,10 +762,169 @@ then
 	echo ""
 	echo -e "kira_exporter.service \e[32minstalled and works\e[39m! You can check logs by: journalctl -u kira_exporter -f"
 	echo "Please note that Kira has its own metrics on ports 26660, 36660, 56660. This exporter is just an addition to the existing ones."
+	echo "Don't forget open port 9080 for promtail ($ firewall-cmd --zone=validator --permanent --add-port=9080/tcp && firewall-cmd --reload)"
 	echo ""
 else
 	echo ""
 	echo -e "Something went wrong. \e[31mInstallation failed\e[39m! You can check logs by: journalctl -u kira_exporter -f"
+	echo ""
+fi
+read -n 1 -s -r -p "Press any key to continue..."
+}
+###################################################################################
+function installIronfishExporter {
+
+if [ ! $PUSHGATEWAY_ADDRESS ] 
+then
+	read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091 or leave empty if you don't use pushgateway): " PUSHGATEWAY_ADDRESS
+	echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
+	source ~/.bash_profile
+fi
+
+echo -e "ironfish_exporter installation starts..."
+sleep 3
+
+CV=$(systemctl list-unit-files | grep "ironfish_exporter.service")
+
+if [ "$CV" != "" ]
+then
+	echo -e "Founded ironfish_exporter.service. Deleting..."
+	systemctl stop ironfish_exporter && systemctl disable ironfish_exporter
+	rm -rf /usr/local/bin/ironfish_exporter.sh
+	rm -rf /etc/systemd/system/ironfish_exporter*
+fi
+
+sudo tee <<EOF1 >/dev/null /usr/local/bin/ironfish_exporter.sh
+#!/bin/bash
+
+PUSHGATEWAY_ADDRESS=$PUSHGATEWAY_ADDRESS
+JOB="ironfish"
+metric_1='my_ironfish_status'
+metric_2='my_ironfish_miner_status'
+metric_3='my_ironfish_peers'
+metric_4='my_ironfish_blocks_height'
+metric_5='my_ironfish_mined_blocks'
+metric_6='my_ironfish_balance'
+metric_7='my_ironfish_p2p_status'
+
+function getMetrics {
+
+temp=\$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./run status)
+
+status=\$(echo \$temp | grep -Eo 'Node: [A-Z]*' | cut -d: -f2 | awk '{$1=$1};1')
+if [ "\$status" = "STARTED" ]
+then
+	status=1
+else
+	status=0
+fi
+
+miner_status=\$(echo \$temp | grep -Eo 'Mining: [A-Z]*' | cut -d: -f2 | awk '{$1=$1};1')
+if [ "\$miner_status" = "STARTED" ]
+then
+	miner_status=1
+else
+	miner_status=0
+fi
+
+peers=\$(echo \$temp | grep -Eo 'peers [0-9]*' | grep -Eo [0-9]+)
+if [ "\$peers" = "" ]
+then
+	peers=0
+fi
+
+blocks_height=\$(echo \$temp | grep -Eo '\([0-9]*\)' | grep -Eo [0-9]+)
+if [ "\$blocks_height" = "" ]
+then
+	blocks_height=0
+fi
+
+mined_blocks=\$(echo \$temp | grep -Eo '[0-9]* mined' | grep -Eo [0-9]+)
+if [ "\$mined_blocks" = "" ]
+then
+	mined_blocks=0
+fi
+
+p2p_status=\$(echo \$temp | grep -Eo 'Network: [A-Z]*' | cut -d: -f2 | awk '{$1=$1};1')
+if [ "\$p2p_status" = "CONNECTED" ]
+then
+	p2p_status=1
+else
+	p2p_status=0
+fi
+
+temp=\$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./run accounts:balance)
+balance=\$(echo \$temp | grep -Eo 'is: [0-9]+' | grep -Eo [0-9]+)
+if [ "\$balance" = "" ]
+then
+	balance=0
+fi
+
+
+#LOGS
+echo -e "Ironfish status report: node_status=\${status}, miner_status=\${miner_status}, peers=\${peers}, blocks=\${blocks_height}, miner_blocks=\${mined_blocks}, p2p_status=\${p2p_status}, balance=\${balance}"
+
+if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
+then
+cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP
+# TYPE my_ironfish_status gauge
+\$metric_1 \$status
+# TYPE my_ironfish_miner_status gauge
+\$metric_2 \$miner_status
+# TYPE my_ironfish_peers gauge
+\$metric_3 \$peers
+# TYPE my_ironfish_blocks_height gauge
+\$metric_4 \$blocks_height
+# TYPE my_ironfish_mined_blocks gauge
+\$metric_5 \$mined_blocks
+# TYPE my_ironfish_balance gauge
+\$metric_6 \$balance
+# TYPE my_ironfish_p2p_status gauge
+\$metric_7 \$p2p_status
+EOF
+echo -e "sended to pushgataway."
+fi
+}
+
+while true; do
+	getMetrics
+	echo "sleep 120 sec."
+	sleep 120
+done
+
+EOF1
+
+chmod +x /usr/local/bin/ironfish_exporter.sh
+
+sudo tee <<EOF >/dev/null /etc/systemd/system/ironfish_exporter.service
+[Unit]
+Description=IronFish Metrics Exporter
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=root
+Group=root
+Type=simple
+WorkingDirectory=/root/ironfish/ironfish-cli/bin
+ExecStart=/usr/local/bin/ironfish_exporter.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload && sudo systemctl enable ironfish_exporter && sudo systemctl start ironfish_exporter
+ 
+VAR=$(systemctl is-active ironfish_exporter.service)
+
+if [ "$VAR" = "active" ]
+then
+	echo ""
+	echo -e "ironfish_exporter.service \e[32minstalled and works\e[39m! You can check logs by: journalctl -u ironfish_exporter -f"
+	echo ""
+else
+	echo ""
+	echo -e "Something went wrong. \e[31mInstallation failed\e[39m! You can check logs by: journalctl -u ironfish_exporter -f"
 	echo ""
 fi
 read -n 1 -s -r -p "Press any key to continue..."
@@ -784,6 +943,7 @@ echo -e " 5 - Loki"
 echo -e " 6 - Promtail"
 echo -e " 7 - Aleo exporter"
 echo -e " 8 - Kira exporter"
+echo -e " 9 - IronFish exporter"
 echo -e " 0 - DELETE old custom exporters (such as nym_pg, kira_pg etc.)"                                                                     
 echo -e " x - EXIT"
 echo -e ""
