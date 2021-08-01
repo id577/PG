@@ -15,7 +15,7 @@ if [ ! $IP_ADDRESS ]
 	IP_ADDRESS=$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
 	if [ "$IP_ADDRESS" =  "" ]
 		then 
-		read -p "IP-adress not defined. Please enter correct IP-adress: " IP_ADDRESS
+		read -p "IP-adress not defined. Please enter correct local IP-adress: " IP_ADDRESS
 	fi
 	echo 'export IP_ADDRESS='${IP_ADDRESS}  >> $HOME/.bash_profile
 	source ~/.bash_profile
@@ -27,7 +27,7 @@ sleep 3
 ###################################################################################
 function clearInstance {
 
-EXPORTERS=("kira_pg" "nym_pg" "aleo_miner_pg" "aleo_pg" "zeitgeist_pg" "rizon_pg" "ironfish_pg" "massa_pg") 
+EXPORTERS=("kira_pg" "nym_pg" "aleo_miner_pg" "aleo_pg" "zeitgeist_pg" "rizon_pg" "ironfish_pg" "massa_pg" "bitcountry_pg") 
  
 for item in ${EXPORTERS[*]}
 do
@@ -94,9 +94,7 @@ then
 	echo -e ""
 else
 	echo -e ""
-	echo -e "#########################################"
 	echo -e "Something went wrong. \e[31mInstallation failed\e[39m! You can check logs by: journalctl -u node_exporter -f"
-	echo -e "#########################################"
 	echo -e ""
 fi
 
@@ -239,7 +237,7 @@ ExecStart=/usr/local/bin/pushgateway
 WantedBy=multi-user.target
 EOF
 
-sudo daemon-reload && sudo systemctl enable pushgateway && sudo systemctl start pushgateway
+sudo systemctl daemon-reload && sudo systemctl enable pushgateway && sudo systemctl start pushgateway
 sleep 3
 
 VAR=$(systemctl is-active pushgateway.service)
@@ -761,7 +759,7 @@ if [ "$VAR" = "active" ]
 then
 	echo ""
 	echo -e "kira_exporter.service \e[32minstalled and works\e[39m! You can check logs by: journalctl -u kira_exporter -f"
-	echo "Please note that Kira has its own metrics on ports 26660, 36660, 56660. This exporter is just an addition to the existing ones."
+	echo "Please note that Kira has its own metrics on ports 26660, 36660, 56660 (you can add this ports as a targets for prometheus). This exporter is just an addition to the existing ones."
 	echo "Don't forget open port 9080 for promtail ($ firewall-cmd --zone=validator --permanent --add-port=9080/tcp && firewall-cmd --reload)"
 	echo ""
 else
@@ -939,13 +937,14 @@ echo -e "# Choose what to install."
 echo -e " 1 - Node_exporter"
 echo -e " 2 - Prometheus"
 echo -e " 3 - Grafana"
-echo -e " 4 - PushGateway"
+echo -e " 4 - PushGateway (optional)"
 echo -e " 5 - Loki"
 echo -e " 6 - Promtail"
 echo -e " 7 - Aleo exporter"
 echo -e " 8 - Kira exporter"
 echo -e " 9 - IronFish exporter"
-echo -e " 0 - DELETE old custom exporters (such as nym_pg, kira_pg etc.)"                                                                     
+echo -e " 0 - DELETE old custom exporters (such as nym_pg, kira_pg etc.)"   
+echo -e " h - HELP"                                                                  
 echo -e " x - EXIT"
 echo -e ""
 read option
@@ -960,6 +959,11 @@ case $option in
 		8) installKiraExporter;;
 		9) installIronfishExporter;;
 		0) clearInstance;;
+		"h") echo -e "HELP:"
+			 echo "- You need to install prometheus, grafana, loki and pushgataway (optional) for collecting metrics from your servers. It needs to be done only once and preferably on a separate server."
+			 echo "- After that, go to grafana interface (ip_address:3000) and add datasource (prometeus and loki). Read here for more information: https://grafana.com/docs/grafana/latest/datasources/add-a-data-source/"
+			 echo "- Add targets for prometheus (ip-addreses with ports of your node_exporters). Use sudo nano /etc/prometheus/prometheus.yml command and reboot prometheus after that. Read here for more information: https://prometheus.io/docs/prometheus/latest/getting_started/"
+			 echo "- You need to install node_exporter, promtail and <blockchain_node_name>_exporter (if exists) on each server from where you want to receive metrics."
 		"x") exit
 esac
 done
