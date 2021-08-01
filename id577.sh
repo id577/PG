@@ -957,6 +957,7 @@ case $option in
         6) installPromtail;;
 		7) installAleoExporter;;
 		8) installKiraExporter;;
+		9) installIronfishExporter;;
 		0) clearInstance;;
 		"x") exit
 esac
