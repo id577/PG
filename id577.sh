@@ -809,9 +809,10 @@ metric_7='my_ironfish_p2p_status'
 
 function getMetrics {
 
+
 temp=\$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./run status)
 
-status=\$(echo \$temp | grep -Eo 'Node: [A-Z]*' | cut -d: -f2 | awk '{$1=$1};1')
+status=\$(echo \$temp | grep -Eo 'Node: [A-Z]*' | cut -d: -f2 | awk '{\$1=\$1};1')
 if [ "\$status" = "STARTED" ]
 then
 	status=1
@@ -819,7 +820,7 @@ else
 	status=0
 fi
 
-miner_status=\$(echo \$temp | grep -Eo 'Mining: [A-Z]*' | cut -d: -f2 | awk '{$1=$1};1')
+miner_status=\$(echo \$temp | grep -Eo 'Mining: [A-Z]*' | cut -d: -f2 | awk '{\$1=\$1};1')
 if [ "\$miner_status" = "STARTED" ]
 then
 	miner_status=1
@@ -845,7 +846,7 @@ then
 	mined_blocks=0
 fi
 
-p2p_status=\$(echo \$temp | grep -Eo 'Network: [A-Z]*' | cut -d: -f2 | awk '{$1=$1};1')
+p2p_status=\$(echo \$temp | grep -Eo 'Network: [A-Z]*' | cut -d: -f2 | awk '{\$1=\$1};1')
 if [ "\$p2p_status" = "CONNECTED" ]
 then
 	p2p_status=1
@@ -862,7 +863,7 @@ fi
 
 
 #LOGS
-echo -e "Ironfish status report: node_status=\${status}, miner_status=\${miner_status}, peers=\${peers}, blocks=\${blocks_height}, miner_blocks=\${mined_blocks}, p2p_status=\${p2p_status}, balance=\${balance}"
+echo -e "Ironfish status report: node_status=\${status}, miner_status=\${miner_status}, peers=\${peers}, blocks=\${blocks_height}, mined_blocks=\${mined_blocks}, p2p_status=\${p2p_status}, balance=\${balance}"
 
 if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
 then
