@@ -963,7 +963,7 @@ case $option in
 			 echo "- You need to install prometheus, grafana, loki and pushgataway (optional) for collecting metrics from your servers. It needs to be done only once and preferably on a separate server."
 			 echo "- After that, go to grafana interface (ip_address:3000) and add datasource (prometeus and loki). Read here for more information: https://grafana.com/docs/grafana/latest/datasources/add-a-data-source/"
 			 echo "- Add targets for prometheus (ip-addreses with ports of your node_exporters). Use sudo nano /etc/prometheus/prometheus.yml command and reboot prometheus after that. Read here for more information: https://prometheus.io/docs/prometheus/latest/getting_started/"
-			 echo "- You need to install node_exporter, promtail and <blockchain_node_name>_exporter (if exists) on each server from where you want to receive metrics."
+			 echo "- You need to install node_exporter, promtail and <blockchain_node_name>_exporter (if exists) on each server from where you want to receive metrics.";;
 		"x") exit
 esac
 done
