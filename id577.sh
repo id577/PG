@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#VERSION 0.2.0b
+#VERSION 0.2.1b
 #VARIABLES
 NODE_EXPORTER_VERSION='1.1.2'
 PROMETHEUS_VERSION='2.28.0'
@@ -22,7 +22,7 @@ if [ ! $IP_ADDRESS ]
 fi
 
 echo -e "Your IP-address is: $IP_ADDRESS"
-sleep 2
+sleep 3
 
 ###################################################################################
 function clearInstance {
@@ -165,7 +165,7 @@ WantedBy=multi-user.target
 EOF
 
 sudo systemctl daemon-reload && sudo systemctl enable prometheus && sudo systemctl start prometheus
-sleep 3
+sleep 10
 
 VAR=$(systemctl is-active prometheus.service)
 if [ "$VAR" = "active" ]
@@ -194,7 +194,7 @@ sudo dpkg -i grafana_${GRAFANA_VERSION}_amd64.deb
 rm -rf grafana*
 
 sudo systemctl daemon-reload && sudo systemctl enable grafana-server && sudo systemctl start grafana-server
-sleep 3
+sleep 10
 
 VAR=$(systemctl is-active grafana.service)
 if [ "$VAR" = "active" ]
@@ -364,7 +364,7 @@ WantedBy=multi-user.target
 EOF
 
 systemctl daemon-reload && systemctl enable loki && systemctl start loki
-sleep 3
+sleep 10
 
 VAR=$(systemctl is-active loki.service)
 if [ "$VAR" = "active" ]
@@ -462,13 +462,12 @@ function installAleoExporter {
 
 if [ ! $PUSHGATEWAY_ADDRESS ] 
 then
-	read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091): " PUSHGATEWAY_ADDRESS
+	read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091 or leave empty if you don't use pushgateway): " PUSHGATEWAY_ADDRESS
 	echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
 	source ~/.bash_profile
 fi
 
 echo -e "Aleo_exporter installation starts..."
-echo -e "Pushgateway ip-address is: ${PUSHGATEWAY_ADDRESS}"
 sleep 3
 
 aleo_service_name=""
@@ -576,6 +575,8 @@ fi
 #LOGS
 echo -e "Aleo status report: aleo_is_active=\${is_active}, aleo_miner_is_active=\${is_active_miner}, is_synced=\${is_synced}, peers_count=\${peers_count}, blocks_count=\${blocks_count}, blocks_mined_count=\${blocks_mined_count}"
 
+if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
+then
 cat <<EOF | curl -s --data-binary @- \$PUSHGATEWAY_ADDRESS/metrics/job/\$job/instance/$IP_ADDRESS
 # TYPE my_aleo_peers_count gauge
 \$metric_1 \$peers_count
@@ -590,11 +591,14 @@ cat <<EOF | curl -s --data-binary @- \$PUSHGATEWAY_ADDRESS/metrics/job/\$job/ins
 # TYPE my_aleo_miner_status gauge
 \$metric_6 \$is_active_miner
 EOF
+echo -e "sended to pushgataway."
+fi
 }
+
 
 while true; do
 	getMetrics
-	echo -e "sleep 60 sec"
+	echo -e "sleep 60 sec."
 	sleep 60
 done
 EOF1
@@ -631,6 +635,138 @@ else
 fi
 read -n 1 -s -r -p "Press any key to continue..."
 
+}
+###################################################################################
+function installKiraExporter {
+
+if [ ! $PUSHGATEWAY_ADDRESS ] 
+then
+	read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091 or leave empty if you don't use pushgateway): " PUSHGATEWAY_ADDRESS
+	echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
+	source ~/.bash_profile
+fi
+
+echo -e "Kira_exporter installation starts..."
+sleep 3
+
+CV=$(systemctl list-unit-files | grep "kira_exporter.service")
+
+if [ "$CV" != "" ]
+then
+	echo -e "Founded kira_exporter.service. Deleting..."
+	systemctl stop kira_exporter && systemctl disable kira_exporter
+	rm -rf /usr/local/bin/kira_exporter.sh
+	rm -rf /etc/systemd/system/kira_exporter*
+fi
+
+if [ ! $KIRA_MONIKER ]
+then
+	read -p "Enter Moniker of your node: " KIRA_MONIKER
+	echo 'export KIRA_MONIKER='${KIRA_MONIKER} >> $HOME/.bash_profile
+	source ~/.bash_profile
+fi
+
+sudo tee <<EOF1 >/dev/null /usr/local/bin/kira_exporter.sh
+#!/bin/bash
+
+JOB="kira"
+metric_1='my_kira_top'
+metric_2='my_kira_streak'
+metric_3='my_kira_rank'
+metric_4='my_kira_status'
+
+function getMetrics {
+
+temp=\$(curl -s https://testnet-rpc.kira.network/api/valopers?moniker=\$KIRA_MONIKER)
+count=\$(echo $temp | wc -m)
+if [ "\$count" -lt "20" ]
+then
+	status=0
+	streak=0
+	rank=0
+	top=999
+fi
+
+status_temp=\$(echo \$temp | grep -E -o 'status\":\"[A-Z]*\"' | grep -E -o '[A-Z]*')
+
+if [ "\$status_temp" = "ACTIVE" ]
+then
+	status=1
+else
+	status=0
+fi
+
+streak=\$(echo \$temp | grep -E -o 'streak\":\"[0-9]*\"' | grep -E -o '[0-9]*')
+rank=\$(echo \$temp | grep -E -o 'rank\":\"[0-9]*\"' | grep -E -o '[0-9]*')
+top=\$(echo \$temp | grep -E -o 'top\":\"[0-9]*\"' | grep -E -o '[0-9]*')
+
+#LOGS
+echo -e "Kira status report: status=\${status}, top=\${top}, rank=\${rank}, streak=\${streak}"
+
+if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
+then
+cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP
+# TYPE my_kira_top gauge
+\$metric_1 \$top
+# TYPE my_kira_streak gauge
+\$metric_2 \$streak
+# TYPE my_kira_rank gauge
+\$metric_3 \$rank
+# TYPE my_kira_status gauge
+\$metric_4 \$status
+EOF
+echo -e "sended to pushgataway."
+fi
+}
+
+while true; do
+	getMetrics
+	echo "sleep 60 sec."
+	sleep 60
+done
+
+EOF1
+
+chmod +x /usr/local/bin/kira_exporter.sh
+
+sudo tee <<EOF >/dev/null /etc/systemd/system/kira_exporter.service
+[Unit]
+Description=Kira Metrics Exporter
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=root
+Group=root
+Type=simple
+ExecStart=/usr/local/bin/kira_exporter.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+mkdir /etc/systemd/system/kira_exporter.service.d
+sudo tee <<EOF >/dev/null /etc/systemd/system/kira_exporter.service.d/override.conf
+[Service]
+Environment="KIRA_MONIKER=$KIRA_MONIKER"
+EOF
+
+sudo systemctl daemon-reload && sudo systemctl enable kira_exporter && sudo systemctl start kira_exporter
+ 
+VAR=$(systemctl is-active kira_exporter.service)
+
+if [ "$VAR" = "active" ]
+then
+	echo ""
+	echo "kira_exporter.service \e[32minstalled and works\e[39m! You can check logs by: journalctl -u kira_exporter -f"
+	echo "Please note that Kira has its own metrics on ports 26660, 36660, 56660. This exporter is just an addition to the existing ones."
+	echo ""
+else
+	echo ""
+	echo "Something went wrong. \e[31mInstallation failed\e[39m! You can check logs by: journalctl -u kira_exporter -f"
+	echo ""
+fi
+read -n 1 -s -r -p "Press any key to continue..."
 }
 ###################################################################################
 while true; do
