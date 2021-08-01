@@ -856,12 +856,11 @@ fi
 
 temp=\$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./run accounts:balance $IRONFISH_WALLET)
 
-balance=\$(echo \$temp | grep -Eo 'is: [0-9]+' | grep -Eo '[0-9]+')
+balance=\$(echo \$temp | grep -Eo 'is: \\$IRON [0-9]+' | grep -Eo '[0-9]+')
 if [ "\$balance" = "" ]
 then
 	balance=0
 fi
-
 
 #LOGS
 echo -e "Ironfish status report: node_status=\${status}, miner_status=\${miner_status}, peers=\${peers}, blocks=\${blocks_height}, mined_blocks=\${mined_blocks}, p2p_status=\${p2p_status}, balance=\${balance}"
