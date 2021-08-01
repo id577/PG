@@ -521,6 +521,7 @@ fi
 sudo tee <<EOF1 >/dev/null /usr/local/bin/aleo_exporter.sh
 #!/bin/bash
 
+PUSHGATEWAY_ADDRESS=$PUSHGATEWAY_ADDRESS
 aleo_service_name="${aleo_service_name}"
 aleo_miner_service_name="${aleo_miner_service_name}"
 job="aleo"
@@ -669,6 +670,7 @@ fi
 sudo tee <<EOF1 >/dev/null /usr/local/bin/kira_exporter.sh
 #!/bin/bash
 
+PUSHGATEWAY_ADDRESS=$PUSHGATEWAY_ADDRESS
 JOB="kira"
 metric_1='my_kira_top'
 metric_2='my_kira_streak'
@@ -758,12 +760,12 @@ VAR=$(systemctl is-active kira_exporter.service)
 if [ "$VAR" = "active" ]
 then
 	echo ""
-	echo "kira_exporter.service \e[32minstalled and works\e[39m! You can check logs by: journalctl -u kira_exporter -f"
+	echo -e "kira_exporter.service \e[32minstalled and works\e[39m! You can check logs by: journalctl -u kira_exporter -f"
 	echo "Please note that Kira has its own metrics on ports 26660, 36660, 56660. This exporter is just an addition to the existing ones."
 	echo ""
 else
 	echo ""
-	echo "Something went wrong. \e[31mInstallation failed\e[39m! You can check logs by: journalctl -u kira_exporter -f"
+	echo -e "Something went wrong. \e[31mInstallation failed\e[39m! You can check logs by: journalctl -u kira_exporter -f"
 	echo ""
 fi
 read -n 1 -s -r -p "Press any key to continue..."
