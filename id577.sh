@@ -854,8 +854,9 @@ else
 	p2p_status=0
 fi
 
-temp=\$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./run accounts:balance)
-balance=\$(echo \$temp | grep -Eo 'is: [0-9]+' | grep -Eo [0-9]+)
+temp=\$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./run accounts:balance $IRONFISH_WALLET)
+
+balance=\$(echo \$temp | grep -Eo 'is: [0-9]+' | grep -Eo '[0-9]+')
 if [ "\$balance" = "" ]
 then
 	balance=0
