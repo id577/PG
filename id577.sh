@@ -14,8 +14,19 @@ if [ ! $IP_ADDRESS ]
 	then 
 	IP_ADDRESS=$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
 	if [ "$IP_ADDRESS" =  "" ]
-		then 
-		read -p "IP-adress not defined. Please enter correct local IP-adress: " IP_ADDRESS
+		then
+			is_correct=false
+			while [ "$is_correct" = false ]; do
+				read -p "IP-adress not defined. Please enter correct local IP-adress: " IP_ADDRESS
+				IP_ADDRESS=$(echo $IP_ADDRESS | grep -oE "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)")
+				if [ "$IP_ADDRESS" !=  "" ]
+				then
+					is_correct=true
+				else
+					echo -e "It doesn't look like an IP-address, please try again"
+					sleep 1
+				fi
+			done
 	fi
 	echo 'export IP_ADDRESS='${IP_ADDRESS}  >> $HOME/.bash_profile
 	source ~/.bash_profile
@@ -538,7 +549,7 @@ then peers_count=0
 fi
 
 is_synced=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getnodeinfo", "params": [] }' -H 'content-type: application/json' http://localhost:3030 | grep -E -o "is_syncing\":[A-Za-z]*" | grep -E -o "(true|false)")
-if [ "\$is_synced" = "true" ]
+if [ "\$is_synced" = "false" ]
 then is_synced=1
 else is_synced=0
 fi
@@ -804,6 +815,7 @@ metric_4='my_ironfish_blocks_height'
 metric_5='my_ironfish_mined_blocks'
 metric_6='my_ironfish_balance'
 metric_7='my_ironfish_p2p_status'
+metric_8='my_ironfish_is_synced'
 
 function getMetrics {
 
@@ -852,6 +864,14 @@ else
 	p2p_status=0
 fi
 
+is_synced=\$(echo \$temp | grep -Eo 'Blockchain: [A-Z]*' | cut -d: -f2 | awk '{\$1=\$1};1')
+if [ "\$is_synced" = "SYNCED" ]
+then
+	is_synced=1
+else
+	is_synced=0
+fi
+
 temp=\$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./run accounts:balance $IRONFISH_WALLET)
 
 balance=\$(echo \$temp | grep -Eo 'is: \\\$IRON [0-9]+' | grep -Eo '[0-9]+')
@@ -861,7 +881,7 @@ then
 fi
 
 #LOGS
-echo -e "Ironfish status report: node_status=\${status}, miner_status=\${miner_status}, peers=\${peers}, blocks=\${blocks_height}, mined_blocks=\${mined_blocks}, p2p_status=\${p2p_status}, balance=\${balance}"
+echo -e "Ironfish status report: node_status=\${status}, miner_status=\${miner_status}, peers=\${peers}, blocks=\${blocks_height}, mined_blocks=\${mined_blocks}, p2p_status=\${p2p_status}, balance=\${balance}, is_synced=\${is_synced}"
 
 if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
 then
