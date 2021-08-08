@@ -1,10 +1,10 @@
 #!/bin/bash
 
-#VERSION 0.2.1b
+#VERSION 0.2.2b
 #VARIABLES
 NODE_EXPORTER_VERSION='1.1.2'
 PROMETHEUS_VERSION='2.28.0'
-GRAFANA_VERSION='8.0.3'
+GRAFANA_VERSION='8.1.0'
 PUSHGATEWAY_VERSION='1.4.1'
 LOKI_VERSION='2.2.1'
 PROMTAIL_VERSION='2.2.1'
@@ -900,6 +900,8 @@ cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/inst
 \$metric_6 \$balance
 # TYPE my_ironfish_p2p_status gauge
 \$metric_7 \$p2p_status
+# TYPE my_ironfish_is_synced gauge
+\$metric_8 \$is_synced
 EOF
 echo -e "sended to pushgataway."
 fi
