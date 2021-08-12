@@ -927,7 +927,7 @@ After=network-online.target
 User=root
 Group=root
 Type=simple
-WorkingDirectory= 
+WorkingDirectory=/root/ironfish/ironfish-cli/bin 
 ExecStart=/usr/local/bin/ironfish_exporter.sh
 
 [Install]
