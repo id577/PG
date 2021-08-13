@@ -953,7 +953,7 @@ read -n 1 -s -r -p "Press any key to continue..."
 ###################################################################################
 function installAleoWatchdog {
 
-echo -e "Aleo_watchdog nstallation starts..."
+echo -e "Aleo_watchdog installation starts..."
 sleep 3
 
 CV=$(systemctl list-unit-files | grep "aleo_watchdog.service")
@@ -977,7 +977,6 @@ FAIL_LIMIT=180
 function checkBlocks() {
 	VAR1=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getblockcount", "params": [] }' -H 'content-type: application/json' http://localhost:3030 | grep -E -o "result\":[0-9]*" | grep -E -o "[0-9]*")
 	echo \$VAR1
-fi
 }
 
 function checkSync() {
@@ -1015,7 +1014,7 @@ function restartAleo() {
 
 
 while true; do
-echo " ----------------------------------------------------------------------"
+echo ""
 ACTIVE_INSTANCE=""
 if [ \$(systemctl is-active aleod.service) = "active" ]; then
 	ACTIVE_INSTANCE="aleod.service"
@@ -1024,7 +1023,7 @@ if [ \$(systemctl is-active aleod.service) = "active" ]; then
 	ACTIVE_INSTANCE="aleod-miner.service"
 	echo "ACTIVE: MINER"
 fi
-if [ ACTIVE_INSTANCE = "" ]; then
+if [ "\$ACTIVE_INSTANCE" = "" ]; then
 	echo "No ALEO MINER or NODE detected!"
 	sleep 30
 	continue
