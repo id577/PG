@@ -951,6 +951,167 @@ fi
 read -n 1 -s -r -p "Press any key to continue..."
 }
 ###################################################################################
+function installAleoWatchdog {
+
+echo -e "Aleo_watchdog nstallation starts..."
+sleep 3
+
+CV=$(systemctl list-unit-files | grep "aleo_watchdog.service")
+
+if [ "$CV" != "" ]
+then
+	echo -e "Founded aleo_watchdog.service. Deleting..."
+	systemctl stop aleo_watchdog && systemctl disable aleo_watchdog
+	rm -rf /usr/local/bin/aleo_watchdog.sh
+	rm -rf /etc/systemd/system/aleo_watchdog*
+fi
+
+sudo tee <<EOF1 >/dev/null /usr/local/bin/aleo_watchdog.sh
+#!/bin/bash
+
+BLK=0
+MND=0
+FAIL_COUNT=0
+FAIL_LIMIT=180
+
+function checkBlocks() {
+	VAR1=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getblockcount", "params": [] }' -H 'content-type: application/json' http://localhost:3030 | grep -E -o "result\":[0-9]*" | grep -E -o "[0-9]*")
+	echo \$VAR1
+fi
+}
+
+function checkSync() {
+	VAR2=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getnodeinfo", "params": [] }' -H 'content-type: application/json' http://localhost:3030 | grep -E -o "is_syncing\":[A-Za-z]*" | grep -E -o "(true|false)")
+	echo \$VAR2
+}
+
+function checkMining() {
+	VAR3=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getnodestats", "params": [] }' -H 'content-type: application/json' http://localhost:3030 | grep -E -o "blocks_mined\":[0-9]*" | grep -E -o "[0-9]*")
+	echo \$VAR3
+}
+
+function changeServices() {
+	MND=0
+	BLK=0
+	FAIL_COUNT=0
+	if [ \$(systemctl is-active aleod.service) = "active" ]; then
+		systemctl stop aleod && systemctl disable aleod
+		systemctl enable aleod-miner && systemctl start aleod-miner
+	fi
+	if [ \$(systemctl is-active aleod-miner.service) = "active" ]; then
+		systemctl stop aleod-miner && systemctl disable aleod-miner
+		systemctl enable aleod && systemctl start aleod
+	fi
+}
+
+function restartAleo() {
+	if [ \$(systemctl is-active aleod.service) = "active" ]; then
+		systemctl restart aleod
+	fi
+		if [ \$(systemctl is-active aleod-miner.service) = "active" ]; then
+		systemctl restart aleod-miner
+	fi
+}
+
+
+while true; do
+echo " ----------------------------------------------------------------------"
+ACTIVE_INSTANCE=""
+if [ \$(systemctl is-active aleod.service) = "active" ]; then
+	ACTIVE_INSTANCE="aleod.service"
+fi
+if [ \$(systemctl is-active aleod.service) = "active" ]; then
+	ACTIVE_INSTANCE="aleod-miner.service"
+	echo "ACTIVE: MINER"
+fi
+if [ ACTIVE_INSTANCE = "" ]; then
+	echo "No ALEO MINER or NODE detected!"
+	sleep 30
+	continue
+fi
+if [ "\$ACTIVE_INSTANCE" = "aleod.service" ]; then
+	echo "Active SnarkOS instance: NODE"
+	BKL_TEMP=\$(checkBlocks)
+	if [ "\$BLK" = "\$BKL_TEMP" ]; then
+		echo "is_syncing: false. Restarting..."
+		restartAleo
+		sleep 1800
+	else
+		BLK=\$BKL_TEMP
+		echo "is_syncing: true"
+		IS_SYNCING=\$(checkSync)
+		if [ "\$IS_SYNCING" = "false" ]; then
+			echo "is_synced: true. Starting miner..."
+			changeServices
+		else
+			echo "is_synced: false"
+			sleep 120
+		fi
+	fi
+fi
+if [ "\$ACTIVE_INSTANCE" = "aleod-miner.service" ]; then
+	echo "Active SnarkOS instance: MINER"
+	BKL_TEMP=\$(checkBlocks)
+	if [ "\$BLK" = "\$BKL_TEMP" ]; then
+		echo "is_syncing: false. Starting node..."
+		changeServices
+		sleep 1800
+	else
+		BLK=\$BKL_TEMP
+		echo "is_syncing: true"
+		IT_MINES=\$(checkMining)
+		if [ "\$MND" = "IT_MINES" ]; then
+			echo "it_miners false. FAIL_COUNT = \${FAIL_COUNT}"
+			((FAIL_COUNT++))
+			echo "it_miners false. FAIL_COUNT = \${FAIL_COUNT} (FAIL_LIMIT = \${FAIL_LIMIT})"
+			if [ "\$FAIL_COUNT" = "\$FAIL_LIMIT" ]; then
+				restartAleo
+			fi
+		else
+			echo "it_mines: true"
+			FAIL_COUNT=0
+			sleep 120
+		fi
+	fi
+fi
+done
+EOF1
+
+chmod +x /usr/local/bin/aleo_watchdog.sh
+
+sudo tee <<EOF >/dev/null /etc/systemd/system/aleo_watchdog.service
+[Unit]
+Description=Aleo Watchdog Exporter
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=root
+Group=root
+Type=simple
+ExecStart=/usr/local/bin/aleo_watchdog.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload && sudo systemctl enable aleo_watchdog && sudo systemctl start aleo_watchdog
+ 
+VAR=$(systemctl is-active aleo_watchdog.service)
+
+if [ "$VAR" = "active" ]
+then
+	echo ""
+	echo -e "aleo_watchdog.service \e[32minstalled and works\e[39m! You can check logs by: journalctl -u aleo_watchdog -f"
+	echo ""
+else
+	echo ""
+	echo -e "Something went wrong. \e[31mInstallation failed\e[39m! You can check logs by: journalctl -u aleo_watchdog -f"
+	echo ""
+fi
+read -n 1 -s -r -p "Press any key to continue..."
+}
+###################################################################################
 while true; do
 
 echo -e ""
@@ -981,6 +1142,7 @@ case $option in
 		8) installKiraExporter;;
 		9) installIronfishExporter;;
 		0) clearInstance;;
+		50) installAleoWatchdog;;
 		"h") echo -e "HELP:"
 			 echo "- You need to install prometheus, grafana, loki and pushgataway (optional) for collecting metrics from your servers. It needs to be done only once and preferably on a separate server."
 			 echo "- After that, go to grafana interface (ip_address:3000) and add datasource (prometeus and loki). Read here for more information: https://grafana.com/docs/grafana/latest/datasources/add-a-data-source/"
