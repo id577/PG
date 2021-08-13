@@ -999,11 +999,13 @@ function changeServices() {
 	if [ \$(systemctl is-active aleod.service) = "active" ]; then
 		systemctl stop aleod && systemctl disable aleod
 		systemctl enable aleod-miner && systemctl start aleod-miner
+		echo "sleep ${AFTER_RESTART_SLEEP_TIME} sec"
 		echo "Aleo-miner started... sleep \${AFTER_RESTART_SLEEP_TIME} sec"
 	fi
 	if [ \$(systemctl is-active aleod-miner.service) = "active" ]; then
 		systemctl stop aleod-miner && systemctl disable aleod-miner
 		systemctl enable aleod && systemctl start aleod
+		echo "sleep ${AFTER_RESTART_SLEEP_TIME} sec"
 		echo "Aleo-node started... sleep \${AFTER_RESTART_SLEEP_TIME} sec"
 		fi
 }
@@ -1011,9 +1013,13 @@ function changeServices() {
 function restartAleo() {
 	if [ \$(systemctl is-active aleod.service) = "active" ]; then
 		systemctl restart aleod
+		echo "sleep ${AFTER_RESTART_SLEEP_TIME} sec"
+		echo "Aleo-node was restarted... sleep \${AFTER_RESTART_SLEEP_TIME} sec"
 	fi
 		if [ \$(systemctl is-active aleod-miner.service) = "active" ]; then
 		systemctl restart aleod-miner
+		echo "sleep ${AFTER_RESTART_SLEEP_TIME} sec"
+		echo "Aleo-miner was restarted... sleep \${AFTER_RESTART_SLEEP_TIME} sec"
 	fi
 }
 
@@ -1029,7 +1035,7 @@ if [ \$(systemctl is-active aleod-miner.service) = "active" ]; then
 fi
 if [ "\$ACTIVE_INSTANCE" = "" ]; then
 	echo "No ALEO MINER or NODE detected!"
-	sleep 30
+	sleep 10
 	continue
 fi
 if [ "\$ACTIVE_INSTANCE" = "aleod.service" ]; then
@@ -1038,7 +1044,6 @@ if [ "\$ACTIVE_INSTANCE" = "aleod.service" ]; then
 	if [ "\$BLK" = "\$BKL_TEMP" ]; then
 		echo "is_syncing: false. Restarting..."
 		restartAleo
-		sleep \$AFTER_RESTART_SLEEP_TIME
 	else
 		BLK=\$BKL_TEMP
 		echo "is_syncing: true"
@@ -1048,6 +1053,7 @@ if [ "\$ACTIVE_INSTANCE" = "aleod.service" ]; then
 			changeServices
 		else
 			echo "is_synced: false"
+			echo "sleep ${SLEEP_TIME} sec"
 			sleep \$SLEEP_TIME
 		fi
 	fi
@@ -1058,7 +1064,6 @@ if [ "\$ACTIVE_INSTANCE" = "aleod-miner.service" ]; then
 	if [ "\$BLK" = "\$BKL_TEMP" ]; then
 		echo "is_syncing: false. Starting node..."
 		changeServices
-		sleep \$AFTER_RESTART_SLEEP_TIME
 	else
 		BLK=\$BKL_TEMP
 		echo "is_syncing: true"
@@ -1073,6 +1078,7 @@ if [ "\$ACTIVE_INSTANCE" = "aleod-miner.service" ]; then
 		else
 			echo "it_mines: true"
 			FAIL_COUNT=0
+			echo "sleep ${SLEEP_TIME} sec"
 			sleep \$SLEEP_TIME
 		fi
 	fi
