@@ -974,7 +974,7 @@ MND=0
 FAIL_COUNT=0
 FAIL_LIMIT=180
 SLEEP_TIME=300
-AFTER_RESTART_SLEEP_TIME=1800
+AFTER_RESTART_SLEEP_TIME=3600
 
 
 function checkBlocks() {
@@ -999,13 +999,13 @@ function changeServices() {
 	if [ \$(systemctl is-active aleod.service) = "active" ]; then
 		systemctl stop aleod && systemctl disable aleod
 		systemctl enable aleod-miner && systemctl start aleod-miner
-		echo "sleep ${AFTER_RESTART_SLEEP_TIME} sec"
+		echo "sleep "$AFTER_RESTART_SLEEP_TIME" sec"
 		echo "Aleo-miner started... sleep \${AFTER_RESTART_SLEEP_TIME} sec"
 	fi
 	if [ \$(systemctl is-active aleod-miner.service) = "active" ]; then
 		systemctl stop aleod-miner && systemctl disable aleod-miner
 		systemctl enable aleod && systemctl start aleod
-		echo "sleep ${AFTER_RESTART_SLEEP_TIME} sec"
+		echo "sleep "$AFTER_RESTART_SLEEP_TIME" sec"
 		echo "Aleo-node started... sleep \${AFTER_RESTART_SLEEP_TIME} sec"
 		fi
 }
@@ -1013,12 +1013,12 @@ function changeServices() {
 function restartAleo() {
 	if [ \$(systemctl is-active aleod.service) = "active" ]; then
 		systemctl restart aleod
-		echo "sleep ${AFTER_RESTART_SLEEP_TIME} sec"
+		echo "sleep "$AFTER_RESTART_SLEEP_TIME" sec"
 		echo "Aleo-node was restarted... sleep \${AFTER_RESTART_SLEEP_TIME} sec"
 	fi
 		if [ \$(systemctl is-active aleod-miner.service) = "active" ]; then
 		systemctl restart aleod-miner
-		echo "sleep ${AFTER_RESTART_SLEEP_TIME} sec"
+		echo "sleep "$AFTER_RESTART_SLEEP_TIME" sec"
 		echo "Aleo-miner was restarted... sleep \${AFTER_RESTART_SLEEP_TIME} sec"
 	fi
 }
@@ -1053,7 +1053,7 @@ if [ "\$ACTIVE_INSTANCE" = "aleod.service" ]; then
 			changeServices
 		else
 			echo "is_synced: false"
-			echo "sleep ${SLEEP_TIME} sec"
+			echo "sleep "$SLEEP_TIME" sec"
 			sleep \$SLEEP_TIME
 		fi
 	fi
@@ -1078,7 +1078,7 @@ if [ "\$ACTIVE_INSTANCE" = "aleod-miner.service" ]; then
 		else
 			echo "it_mines: true"
 			FAIL_COUNT=0
-			echo "sleep ${SLEEP_TIME} sec"
+			echo "sleep "$SLEEP_TIME" sec"
 			sleep \$SLEEP_TIME
 		fi
 	fi
