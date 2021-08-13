@@ -969,8 +969,6 @@ fi
 sudo tee <<EOF1 >/dev/null /usr/local/bin/aleo_watchdog.sh
 #!/bin/bash
 
-waitForAleo
-
 BLK=0
 MND=0
 FAIL_COUNT=0
@@ -978,6 +976,20 @@ FAIL_LIMIT=180
 SLEEP_TIME=600
 AFTER_RESTART_SLEEP_TIME=1800
 
+function waitForAleoMonitor() {
+	while true; do
+	VAR0=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getblockcount", "params": [] }' -H 'content-type: application/json' http://localhost:3030 | grep -E -o "result\":[0-9]*" | grep -E -o "[0-9]*")
+	if [ "\$VAR0" != "" ]; then
+		echo "Aleo monitoring is active!"
+		break
+	else
+		echo "Waiting for Aleo monitoring start..."
+		sleep 30
+	fi
+done
+}
+
+waitForAleoMonitor
 
 function checkBlocks() {
 	VAR1=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getblockcount", "params": [] }' -H 'content-type: application/json' http://localhost:3030 | grep -E -o "result\":[0-9]*" | grep -E -o "[0-9]*")
@@ -1003,45 +1015,34 @@ function changeServices() {
 		systemctl enable aleod-miner && systemctl start aleod-miner
 		echo "Aleo-miner started... sleep "\$AFTER_RESTART_SLEEP_TIME" sec"
 		sleep \$AFTER_RESTART_SLEEP_TIME
-		waitForAleo
+		waitForAleoMonitor
 	fi
 	if [ \$(systemctl is-active aleod-miner.service) = "active" ]; then
 		systemctl stop aleod-miner && systemctl disable aleod-miner
 		systemctl enable aleod && systemctl start aleod
 		echo "Aleo-node started... sleep "\$AFTER_RESTART_SLEEP_TIME" sec"
 		sleep \$AFTER_RESTART_SLEEP_TIME
-		waitForAleo
+		waitForAleoMonitor
 	fi
 }
 
 function restartAleo() {
+	MND=0
+	BLK=0
+	FAIL_COUNT=0
 	if [ \$(systemctl is-active aleod.service) = "active" ]; then
 		systemctl restart aleod
 		echo "Aleo-node was restarted... sleep "\$AFTER_RESTART_SLEEP_TIME" sec"
 		sleep \$AFTER_RESTART_SLEEP_TIME
-		waitForAleo
+		waitForAleoMonitor
 	fi
 		if [ \$(systemctl is-active aleod-miner.service) = "active" ]; then
 		systemctl restart aleod-miner
 		echo "Aleo-miner was restarted... sleep "\$AFTER_RESTART_SLEEP_TIME" sec"
 		sleep \$AFTER_RESTART_SLEEP_TIME
-		waitForAleo
+		waitForAleoMonitor
 	fi
 }
-
-function waitForAleo() {
-	while true; do
-	VAR0=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getblockcount", "params": [] }' -H 'content-type: application/json' http://localhost:3030 | grep -E -o "result\":[0-9]*" | grep -E -o "[0-9]*")
-	if [ "\$VAR0" != "" ]; then
-		echo "Watchdog ACTIVE!"
-		break
-	else
-		echo "Waiting for Aleo monitoring start..."
-		sleep 30
-	fi
-done
-}
-
 
 while true; do
 echo "--------------------------"
@@ -1058,8 +1059,11 @@ if [ "\$ACTIVE_INSTANCE" = "" ]; then
 	continue
 fi
 if [ "\$ACTIVE_INSTANCE" = "aleod.service" ]; then
+	if [ "\$BLK" = "0" ]; then
+		BLK=\$(checkBlocks)
+	fi
 	echo "Active SnarkOS instance: NODE"
-	echo "sleep "$SLEEP_TIME" sec"
+	echo "sleep "\$SLEEP_TIME" sec"
 	sleep \$SLEEP_TIME
 	BKL_TEMP=\$(checkBlocks)
 	if [ "\$BLK" = "\$BKL_TEMP" ]; then
@@ -1078,8 +1082,11 @@ if [ "\$ACTIVE_INSTANCE" = "aleod.service" ]; then
 	fi
 fi
 if [ "\$ACTIVE_INSTANCE" = "aleod-miner.service" ]; then
+	if [ "\$BLK" = "0" ]; then
+		BLK=\$(checkBlocks)
+	fi
 	echo "Active SnarkOS instance: MINER"
-	echo "sleep "$SLEEP_TIME" sec"
+	echo "sleep "\$SLEEP_TIME" sec"
 	sleep \$SLEEP_TIME
 	BKL_TEMP=\$(checkBlocks)
 	if [ "\$BLK" = "\$BKL_TEMP" ]; then
