@@ -973,6 +973,9 @@ BLK=0
 MND=0
 FAIL_COUNT=0
 FAIL_LIMIT=180
+SLEEP_TIME=300
+AFTER_RESTART_SLEEP_TIME=1800
+
 
 function checkBlocks() {
 	VAR1=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getblockcount", "params": [] }' -H 'content-type: application/json' http://localhost:3030 | grep -E -o "result\":[0-9]*" | grep -E -o "[0-9]*")
@@ -996,11 +999,13 @@ function changeServices() {
 	if [ \$(systemctl is-active aleod.service) = "active" ]; then
 		systemctl stop aleod && systemctl disable aleod
 		systemctl enable aleod-miner && systemctl start aleod-miner
+		echo "Aleo-miner started... sleep \${AFTER_RESTART_SLEEP_TIME} sec"
 	fi
 	if [ \$(systemctl is-active aleod-miner.service) = "active" ]; then
 		systemctl stop aleod-miner && systemctl disable aleod-miner
 		systemctl enable aleod && systemctl start aleod
-	fi
+		echo "Aleo-node started... sleep \${AFTER_RESTART_SLEEP_TIME} sec"
+		fi
 }
 
 function restartAleo() {
@@ -1019,9 +1024,8 @@ ACTIVE_INSTANCE=""
 if [ \$(systemctl is-active aleod.service) = "active" ]; then
 	ACTIVE_INSTANCE="aleod.service"
 fi
-if [ \$(systemctl is-active aleod.service) = "active" ]; then
+if [ \$(systemctl is-active aleod-miner.service) = "active" ]; then
 	ACTIVE_INSTANCE="aleod-miner.service"
-	echo "ACTIVE: MINER"
 fi
 if [ "\$ACTIVE_INSTANCE" = "" ]; then
 	echo "No ALEO MINER or NODE detected!"
@@ -1034,7 +1038,7 @@ if [ "\$ACTIVE_INSTANCE" = "aleod.service" ]; then
 	if [ "\$BLK" = "\$BKL_TEMP" ]; then
 		echo "is_syncing: false. Restarting..."
 		restartAleo
-		sleep 1800
+		sleep \$AFTER_RESTART_SLEEP_TIME
 	else
 		BLK=\$BKL_TEMP
 		echo "is_syncing: true"
@@ -1044,7 +1048,7 @@ if [ "\$ACTIVE_INSTANCE" = "aleod.service" ]; then
 			changeServices
 		else
 			echo "is_synced: false"
-			sleep 120
+			sleep \$SLEEP_TIME
 		fi
 	fi
 fi
@@ -1054,7 +1058,7 @@ if [ "\$ACTIVE_INSTANCE" = "aleod-miner.service" ]; then
 	if [ "\$BLK" = "\$BKL_TEMP" ]; then
 		echo "is_syncing: false. Starting node..."
 		changeServices
-		sleep 1800
+		sleep \$AFTER_RESTART_SLEEP_TIME
 	else
 		BLK=\$BKL_TEMP
 		echo "is_syncing: true"
@@ -1069,7 +1073,7 @@ if [ "\$ACTIVE_INSTANCE" = "aleod-miner.service" ]; then
 		else
 			echo "it_mines: true"
 			FAIL_COUNT=0
-			sleep 120
+			sleep \$SLEEP_TIME
 		fi
 	fi
 fi
