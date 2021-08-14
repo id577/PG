@@ -974,7 +974,7 @@ MND=0
 FAIL_COUNT=0
 FAIL_LIMIT=180
 SLEEP_TIME=600
-AFTER_RESTART_SLEEP_TIME=1800
+AFTER_RESTART_SLEEP_TIME=7200
 
 function waitForAleoMonitor() {
 	while true; do
@@ -1035,8 +1035,7 @@ function restartAleo() {
 		echo "Aleo-node was restarted... sleep "\$AFTER_RESTART_SLEEP_TIME" sec"
 		sleep \$AFTER_RESTART_SLEEP_TIME
 		waitForAleoMonitor
-	fi
-		if [ \$(systemctl is-active aleod-miner.service) = "active" ]; then
+	elif [ \$(systemctl is-active aleod-miner.service) = "active" ]; then
 		systemctl restart aleod-miner
 		echo "Aleo-miner was restarted... sleep "\$AFTER_RESTART_SLEEP_TIME" sec"
 		sleep \$AFTER_RESTART_SLEEP_TIME
