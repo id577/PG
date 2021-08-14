@@ -1016,8 +1016,7 @@ function changeServices() {
 		echo "Aleo-miner started... sleep "\$AFTER_RESTART_SLEEP_TIME" sec"
 		sleep \$AFTER_RESTART_SLEEP_TIME
 		waitForAleoMonitor
-	fi
-	if [ \$(systemctl is-active aleod-miner.service) = "active" ]; then
+	elif [ \$(systemctl is-active aleod-miner.service) = "active" ]; then
 		systemctl stop aleod-miner && systemctl disable aleod-miner
 		systemctl enable aleod && systemctl start aleod
 		echo "Aleo-node started... sleep "\$AFTER_RESTART_SLEEP_TIME" sec"
