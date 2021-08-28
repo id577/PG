@@ -463,8 +463,8 @@ scrape_configs:
   journal:
     max_age: 12h
     labels:
-      job: JOB_NAME
-      host: IP_ADDRESS
+      job: $JOB_NAME
+      host: $IP_ADDRESS
   relabel_configs:
   - source_labels: ['__journal__systemd_unit']
     target_label: 'unit'
