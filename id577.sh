@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#VERSION 0.2.2b
+#VERSION 0.2.3b
 #VARIABLES
 NODE_EXPORTER_VERSION='1.1.2'
 PROMETHEUS_VERSION='2.28.0'
@@ -421,19 +421,53 @@ positions:
   filename: /tmp/positions.yaml
 
 clients:
-  - url: http://${IP_LOKI}/loki/api/v1/push
+  - url: http://$IP_LOKI:3100/loki/api/v1/push
 
 scrape_configs:
-  - job_name: syslog
-    journal:
-      max_age: 12h
-      labels:
-        job: $JOB_NAME
-        host: $IP_ADDRESS
-    relabel_configs:
-      - source_labels: ['__journal__systemd_unit']
-        target_label: 'unit'
+- job_name: containers
+  static_configs:
+  - targets:
+      - localhost
+    labels:
+      job: ${JOB_NAME}_docker
+      host: $IP_ADDRESS
+      __path__: /var/lib/docker/containers/*/*log
+
+  pipeline_stages:
+  - json:
+      expressions:
+        output: log
+        stream: stream
+        attrs:
+  - json:
+      expressions:
+        tag:
+      source: attrs
+  - regex:
+      expression: (?P<container_name>(?:[^|]*[^|]))
+      source: tag
+  - timestamp:
+      format: RFC3339Nano
+      source: time
+  - labels:
+      # tag:
+      stream:
+      container_name:
+  - output:
+      source: output
+      
+- job_name: syslog
+  journal:
+    max_age: 12h
+    labels:
+      job: JOB_NAME
+      host: IP_ADDRESS
+  relabel_configs:
+  - source_labels: ['__journal__systemd_unit']
+    target_label: 'unit'
+
 EOF
+
 
 sudo tee <<EOF >/dev/null /etc/systemd/system/promtail.service
 [Unit]
