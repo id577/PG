@@ -402,7 +402,10 @@ sleep 3
 CV=$(systemctl list-unit-files | grep "promtail")
 if [ "$CV" != "" ]
 then
-	systemctl stop promtail
+	echo -e "Founded promtail. Deleting..."
+	systemctl stop promtail && systemctl disable promtail
+	rm -rf /etc/promtail*
+	rm -rf /etc/systemd/system/promtail*
 fi
 
 sudo curl -fSL -o promtail.gz "https://github.com/grafana/loki/releases/download/v${PROMTAIL_VERSION}/promtail-linux-amd64.zip"
@@ -421,7 +424,7 @@ positions:
   filename: /tmp/positions.yaml
 
 clients:
-  - url: http://$IP_LOKI:3100/loki/api/v1/push
+  - url: http://${IP_LOKI}/loki/api/v1/push
 
 scrape_configs:
 - job_name: containers
@@ -465,9 +468,7 @@ scrape_configs:
   relabel_configs:
   - source_labels: ['__journal__systemd_unit']
     target_label: 'unit'
-
 EOF
-
 
 sudo tee <<EOF >/dev/null /etc/systemd/system/promtail.service
 [Unit]
