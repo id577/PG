@@ -985,6 +985,122 @@ else
 fi
 read -n 1 -s -r -p "Press any key to continue..."
 }
+
+###################################################################################
+function installMinimaExporter {
+
+if [ ! $PUSHGATEWAY_ADDRESS ] 
+then
+	read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091 or leave empty if you don't use pushgateway): " PUSHGATEWAY_ADDRESS
+	echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
+	source ~/.bash_profile
+fi
+
+echo -e "minima_exporter installation starts..."
+sleep 3
+
+CV=$(systemctl list-unit-files | grep "minima_exporter.service")
+
+if [ "$CV" != "" ]
+then
+	echo -e "Founded minima_exporter.service. Deleting..."
+	systemctl stop minima_exporter && systemctl disable minima_exporter
+	rm -rf /usr/local/bin/minima_exporter.sh
+	rm -rf /etc/systemd/system/minima_exporter*
+fi
+
+sudo tee <<EOF1 >/dev/null /usr/local/bin/minima_exporter.sh
+#!/bin/bash
+
+PUSHGATEWAY_ADDRESS=$PUSHGATEWAY_ADDRESS
+JOB="minima"
+metric_1='my_minima_status'
+metric_2='my_minima_lastblock'
+metric_3='my_minima_connections'
+
+function getMetrics {
+
+temp=\$(curl -s 127.0.0.1:9002/status | jq)
+
+status=\$(echo \$temp | grep -Eo 'status\": [a-z]*' | grep -Eo '(true|false)')
+if [ "\$status" = "true" ]
+then
+	status=1
+else
+	status=0
+fi
+
+lastblock=\$(echo \$temp | grep -Eo 'lastblock\": \"[0-9]*' | grep -Eo '[0-9]*')
+if [ "\$lastblock" = "" ]
+then
+	lastblock=0
+fi
+
+connections=\$(echo \$temp | grep -Eo 'connections\": [0-9]*' | grep -Eo '[0-9]+')
+if [ "\$connections" = "" ]
+then
+	connections=0
+fi
+
+#LOGS
+echo -e "minima status report: status=\${status}, lastblock=\${lastblock}, connections=\${connections}"
+
+if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
+then
+cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP
+# TYPE my_minima_status gauge
+\$metric_1 \$status
+# TYPE my_minima_lastblock gauge
+\$metric_2 \$lastblock
+# TYPE my_minima_connections gauge
+\$metric_3 \$connections
+EOF
+echo -e "sended to pushgataway."
+fi
+}
+
+while true; do
+	getMetrics
+	echo "sleep 120 sec."
+	sleep 120
+done
+
+EOF1
+
+chmod +x /usr/local/bin/minima_exporter.sh
+
+sudo tee <<EOF >/dev/null /etc/systemd/system/minima_exporter.service
+[Unit]
+Description=minima Metrics Exporter
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=root
+Group=root
+Type=simple 
+ExecStart=/usr/local/bin/minima_exporter.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload && sudo systemctl enable minima_exporter && sudo systemctl start minima_exporter
+ 
+VAR=$(systemctl is-active minima_exporter.service)
+
+if [ "$VAR" = "active" ]
+then
+	echo ""
+	echo -e "minima_exporter.service \e[32minstalled and works\e[39m! You can check logs by: journalctl -u minima_exporter -f"
+	echo ""
+else
+	echo ""
+	echo -e "Something went wrong. \e[31mInstallation failed\e[39m! You can check logs by: journalctl -u minima_exporter -f"
+	echo ""
+fi
+read -n 1 -s -r -p "Press any key to continue..."
+}
 ###################################################################################
 function installAleoWatchdog {
 
@@ -1194,6 +1310,7 @@ echo -e " 6 - Promtail"
 echo -e " 7 - Aleo exporter"
 echo -e " 8 - Kira exporter"
 echo -e " 9 - IronFish exporter"
+echo -e " 10 - Minima exporter"
 echo -e " 0 - DELETE old custom exporters (such as nym_pg, kira_pg etc.)"   
 echo -e " h - HELP"                                                                  
 echo -e " x - EXIT"
@@ -1209,6 +1326,7 @@ case $option in
 		7) installAleoExporter;;
 		8) installKiraExporter;;
 		9) installIronfishExporter;;
+		10) installMinimaExporter;;
 		0) clearInstance;;
 		50) installAleoWatchdog;;
 		"h") echo -e "HELP:"
