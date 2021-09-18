@@ -1448,9 +1448,6 @@ then
 	rm -rf /etc/systemd/system/massa_exporter*
 fi
 
-. <(wget -qO- https://raw.githubusercontent.com/SecorD0/utils/main/insert_variable.sh) "massa_wallet_info" ". <(wget -qO- https://raw.githubusercontent.com/SecorD0/Massa/main/cli_client.sh) RU wallet_info" true
-. <(wget -qO- https://raw.githubusercontent.com/SecorD0/utils/main/insert_variable.sh) "massa_peers" ". <(wget -qO- https://raw.githubusercontent.com/SecorD0/Massa/main/cli_client.sh) RU peers" true
-
 
 sudo tee <<EOF1 >/dev/null /usr/local/bin/massa_exporter.sh
 #!/bin/bash
@@ -1458,45 +1455,63 @@ sudo tee <<EOF1 >/dev/null /usr/local/bin/massa_exporter.sh
 PUSHGATEWAY_ADDRESS=$PUSHGATEWAY_ADDRESS
 JOB="massa"
 
-metric_1='my_cosmos_latest_block_height'
-metric_2='my_cosmos_catching_up'
-metric_3='my_cosmos_voting_power'
+metric_1='my_massa_balance'
+metric_2='my_massa_rolls'
+metric_3='my_massa_active_rolls'
+metric_4='my_massa_incoming_peers'
+metric_5='my_massa_outgoing_peers'
 
 function getMetrics {
 
-temp=$(massa_wallet_info)
+cd $HOME/massa/massa-client/
+wallet_info=\$(./massa-client --cli true wallet_info)
 
+balance=$(echo \$wallet_info | grep -Eo "final_ledger_data\": \{ \"balance\": \"[0-9]*.[0-9]*" |  grep -Eo "[0-9]*\.[0-9]*")
+if [ "\$balance" = "" ]
+then
+	balance="0"
+fi
+rolls=$(echo \$wallet_info | grep -Eo "final_rolls\": [0-9]*"  |  grep -Eo [0-9]*)
+if [ "\$rolls" = "" ]
+then
+	rolls="0"
+fi
+active_rolls=$(echo \$wallet_info | grep -Eo "active_rolls": [0-9]*"  |  grep -Eo [0-9]*)
+if [ "\$active_rolls" = "" ]
+then
+	active_rolls="0"
+fi
 
+peers=\$(./massa-client --cli false peers)
+cd
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+incoming_peers=\$(echo \$peers | grep -Eo 'node_id: [A-Za-z0-9]* \(incoming\)' | wc -l)
+if [ "\$incoming_peers" = "" ]
+then
+	incoming_peers="0"
+fi
+outgoing_peers=\$(echo \$peers | grep -Eo 'node_id: [A-Za-z0-9]* \(outgoing\)' | wc -l)
+if [ "\$outgoing_peers" = "" ]
+then
+	outgoing_peers="0"
+fi
 
 #LOGS
-echo -e "cosmos status report: temp=\${temp}"
+echo -e "massa status report: balance=\${balance}, rolls=\${rolls}, active_rolls=\${active_rolls}, incoming_peers=\${incoming_peers}, outgoing_peers=\${outgoing_peers}"
 
 if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
 then
 cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP
-# TYPE my_cosmos_latest_block_height gauge
-\$metric_1 \$latest_block_height
-# TYPE my_cosmos_catching_up gauge
-\$metric_2 \$catching_up
-# TYPE my_cosmos_voting_power gauge
-\$metric_3 \$voting_power
+# TYPE my_massa_balance gauge
+\$metric_1 \$balance
+# TYPE my_massa_rolls gauge
+\$metric_2 \$rolls
+# TYPE my_massa_active_rolls gauge
+\$metric_3 \$active_rolls
+# TYPE my_massa_incoming_peers gauge
+\$metric_4 \$incoming_peers
+# TYPE my_massa_outgoing_peers gauge
+\$metric_5 \$outgoing_peers
 EOF
 echo -e "sended to pushgataway."
 fi
@@ -1514,7 +1529,7 @@ chmod +x /usr/local/bin/massa_exporter.sh
 
 sudo tee <<EOF >/dev/null /etc/systemd/system/massa_exporter.service
 [Unit]
-Description=Cosmos exporter
+Description=Massa exporter
 Wants=network-online.target
 After=network-online.target
 
@@ -1562,6 +1577,7 @@ echo -e " 8 - Kira exporter"
 echo -e " 9 - IronFish exporter"
 echo -e " 10 - Minima exporter"
 echo -e " 11 - Cosmos exporter"
+echo -e " 12 - Massa exporter"
 echo -e " 0 - DELETE old custom exporters (such as nym_pg, kira_pg etc.)"   
 echo -e " h - HELP"                                                                  
 echo -e " x - EXIT"
