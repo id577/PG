@@ -1425,6 +1425,125 @@ else
 fi
 read -n 1 -s -r -p "Press any key to continue..."
 }
+###################################################################################
+function installMassaExporter {
+
+if [ ! $PUSHGATEWAY_ADDRESS ] 
+then
+	read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091 or leave empty if you don't use pushgateway): " PUSHGATEWAY_ADDRESS
+	echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
+	source ~/.bash_profile
+fi
+
+echo -e "massa_exporter installation starts..."
+sleep 3
+
+CV=$(systemctl list-unit-files | grep "massa_exporter.service")
+
+if [ "$CV" != "" ]
+then
+	echo -e "Founded massa_exporter.service. Deleting..."
+	systemctl stop massa_exporter && systemctl disable massa_exporter
+	rm -rf /usr/local/bin/massa_exporter.sh
+	rm -rf /etc/systemd/system/massa_exporter*
+fi
+
+. <(wget -qO- https://raw.githubusercontent.com/SecorD0/utils/main/insert_variable.sh) "massa_wallet_info" ". <(wget -qO- https://raw.githubusercontent.com/SecorD0/Massa/main/cli_client.sh) RU wallet_info" true
+. <(wget -qO- https://raw.githubusercontent.com/SecorD0/utils/main/insert_variable.sh) "massa_peers" ". <(wget -qO- https://raw.githubusercontent.com/SecorD0/Massa/main/cli_client.sh) RU peers" true
+
+
+sudo tee <<EOF1 >/dev/null /usr/local/bin/massa_exporter.sh
+#!/bin/bash
+
+PUSHGATEWAY_ADDRESS=$PUSHGATEWAY_ADDRESS
+JOB="massa"
+
+metric_1='my_cosmos_latest_block_height'
+metric_2='my_cosmos_catching_up'
+metric_3='my_cosmos_voting_power'
+
+function getMetrics {
+
+temp=$(massa_wallet_info)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#LOGS
+echo -e "cosmos status report: temp=\${temp}"
+
+if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
+then
+cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP
+# TYPE my_cosmos_latest_block_height gauge
+\$metric_1 \$latest_block_height
+# TYPE my_cosmos_catching_up gauge
+\$metric_2 \$catching_up
+# TYPE my_cosmos_voting_power gauge
+\$metric_3 \$voting_power
+EOF
+echo -e "sended to pushgataway."
+fi
+}
+
+while true; do
+	getMetrics
+	echo "sleep 120 sec."
+	sleep 120
+done
+
+EOF1
+
+chmod +x /usr/local/bin/massa_exporter.sh
+
+sudo tee <<EOF >/dev/null /etc/systemd/system/massa_exporter.service
+[Unit]
+Description=Cosmos exporter
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=root
+Group=root
+Type=simple
+ExecStart=/usr/local/bin/massa_exporter.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload && sudo systemctl enable massa_exporter && sudo systemctl start massa_exporter
+ 
+VAR=$(systemctl is-active massa_exporter.service)
+
+if [ "$VAR" = "active" ]
+then
+	echo ""
+	echo -e "massa_exporter.service \e[32minstalled and works\e[39m! You can check logs by: journalctl -u massa_exporter -f"
+	echo ""
+else
+	echo ""
+	echo -e "Something went wrong. \e[31mInstallation failed\e[39m! You can check logs by: journalctl -u massa_exporter -f"
+	echo ""
+fi
+read -n 1 -s -r -p "Press any key to continue..."
+}
 
 ###################################################################################
 while true; do
@@ -1460,6 +1579,7 @@ case $option in
 		9) installIronfishExporter;;
 		10) installMinimaExporter;;
 		11) installCosmosExporter;;
+		12) installMassaExporter;;
 		0) clearInstance;;
 		50) installAleoWatchdog;;
 		"h") echo -e "HELP:"
