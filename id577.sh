@@ -1341,29 +1341,29 @@ fi
 latest_block_height=\$(echo \$temp | grep -Eo 'latest_block_height\": \"[0-9]*\"'| awk '{print \$2}' | cut -d/ -f1 | grep -Eo [0-9]*)
 if [ "\$latest_block_height" = "" ]
 then
-	latest_block_height="0"
+	latest_block_height=0
 fi
 
 catching_up=\$(echo \$temp | grep -Eo 'catching_up\": [a-z]*' | grep -E -o "(true|false)")
 if [ "\$catching_up" = "" ]
 then
-	catching_up="1"
+	catching_up=1
 fi
 
 if [ "\$catching_up" = "true" ]
 then
-	catching_up="1"
+	catching_up=1
 fi
 
 if [ "\$catching_up" = "false" ]
 then
-	catching_up="0"
+	catching_up=0
 fi
 
 voting_power=\$(echo \$temp | grep -Eo 'voting_power\": \"[0-9]*\"'| awk '{print \$2}' | cut -d/ -f1 | grep -Eo [0-9]*)
 if [ "\$voting_power" = "" ]
 then
-	voting_power="0"
+	voting_power=0
 fi
 
 #LOGS
@@ -1466,20 +1466,20 @@ function getMetrics {
 cd $HOME/massa/massa-client/
 wallet_info=\$(./massa-client --cli true wallet_info)
 
-balance=$(echo \$wallet_info | grep -Eo "final_ledger_data\": \{ \"balance\": \"[0-9]*.[0-9]*" |  grep -Eo "[0-9]*\.[0-9]*")
+balance=\$(echo \$wallet_info | grep -Eo "final_ledger_data\": \{ \"balance\": \"[0-9]*.[0-9]*" |  grep -Eo "[0-9]*\.[0-9]*")
 if [ "\$balance" = "" ]
 then
-	balance="0"
+	balance=0
 fi
-rolls=$(echo \$wallet_info | grep -Eo "final_rolls\": [0-9]*"  |  grep -Eo [0-9]*)
+rolls=\$(echo \$wallet_info | grep -Eo "final_rolls\": [0-9]*"  |  grep -Eo [0-9]*)
 if [ "\$rolls" = "" ]
 then
-	rolls="0"
+	rolls=0
 fi
-active_rolls=$(echo \$wallet_info | grep -Eo "active_rolls": [0-9]*"  |  grep -Eo [0-9]*)
+active_rolls=\$(echo \$wallet_info | grep -Eo "active_rolls\": [0-9]*"  |  grep -Eo [0-9]*)
 if [ "\$active_rolls" = "" ]
 then
-	active_rolls="0"
+	active_rolls=0
 fi
 
 peers=\$(./massa-client --cli false peers)
@@ -1488,12 +1488,12 @@ cd
 incoming_peers=\$(echo \$peers | grep -Eo 'node_id: [A-Za-z0-9]* \(incoming\)' | wc -l)
 if [ "\$incoming_peers" = "" ]
 then
-	incoming_peers="0"
+	incoming_peers=0
 fi
 outgoing_peers=\$(echo \$peers | grep -Eo 'node_id: [A-Za-z0-9]* \(outgoing\)' | wc -l)
 if [ "\$outgoing_peers" = "" ]
 then
-	outgoing_peers="0"
+	outgoing_peers=0
 fi
 
 #LOGS
