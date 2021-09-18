@@ -1442,6 +1442,7 @@ echo -e " 7 - Aleo exporter"
 echo -e " 8 - Kira exporter"
 echo -e " 9 - IronFish exporter"
 echo -e " 10 - Minima exporter"
+echo -e " 11 - Cosmos exporter"
 echo -e " 0 - DELETE old custom exporters (such as nym_pg, kira_pg etc.)"   
 echo -e " h - HELP"                                                                  
 echo -e " x - EXIT"
@@ -1458,6 +1459,7 @@ case $option in
 		8) installKiraExporter;;
 		9) installIronfishExporter;;
 		10) installMinimaExporter;;
+		11) installCosmosExporter;;
 		0) clearInstance;;
 		50) installAleoWatchdog;;
 		"h") echo -e "HELP:"
