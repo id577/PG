@@ -1265,7 +1265,7 @@ chmod +x /usr/local/bin/aleo_watchdog.sh
 
 sudo tee <<EOF >/dev/null /etc/systemd/system/aleo_watchdog.service
 [Unit]
-Description=Aleo Watchdog Exporter
+Description=Aleo Watchdog
 Wants=network-online.target
 After=network-online.target
 
@@ -1295,6 +1295,137 @@ else
 fi
 read -n 1 -s -r -p "Press any key to continue..."
 }
+
+###################################################################################
+function installCosmosExporter {
+
+if [ ! $PUSHGATEWAY_ADDRESS ] 
+then
+	read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091 or leave empty if you don't use pushgateway): " PUSHGATEWAY_ADDRESS
+	echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
+	source ~/.bash_profile
+fi
+
+echo -e "Cosmos_exporter installation starts..."
+sleep 3
+
+CV=$(systemctl list-unit-files | grep "cosmos_exporter.service")
+
+if [ "$CV" != "" ]
+then
+	echo -e "Founded cosmos_exporter.service. Deleting..."
+	systemctl stop cosmos_exporter && systemctl disable cosmos_exporter
+	rm -rf /usr/local/bin/cosmos_exporter.sh
+	rm -rf /etc/systemd/system/cosmos_exporter*
+fi
+
+sudo tee <<EOF1 >/dev/null /usr/local/bin/cosmos_exporter.sh
+#!/bin/bash
+
+PUSHGATEWAY_ADDRESS=$PUSHGATEWAY_ADDRESS
+JOB="cosmos"
+metric_1='my_cosmos_latest_block_height'
+metric_2='my_cosmos_catching_up'
+metric_3='my_cosmos_voting_power'
+
+function getMetrics {
+temp=\$(curl -s localhost:26657/status)
+
+moniker=\$(echo \$temp | grep -Eo 'moniker\": \"[a-zA-Z0-9]*\"'| awk '{print \$2}' | cut -d/ -f1 | grep -Eo "[A-Za-z0-9]*")
+
+if [ "\$moniker" = "" ]
+then
+	moniker="n/a"
+fi
+
+latest_block_height=\$(echo \$temp | grep -Eo 'latest_block_height\": \"[0-9]*\"'| awk '{print \$2}' | cut -d/ -f1 | grep -Eo [0-9]*)
+if [ "\$latest_block_height" = "" ]
+then
+	latest_block_height="0"
+fi
+
+catching_up=\$(echo \$temp | grep -Eo 'catching_up\": [a-z]*' | grep -E -o "(true|false)")
+if [ "\$catching_up" = "" ]
+then
+	catching_up="1"
+fi
+
+if [ "\$catching_up" = "true" ]
+then
+	catching_up="1"
+fi
+
+if [ "\$catching_up" = "false" ]
+then
+	catching_up="0"
+fi
+
+voting_power=\$(echo \$temp | grep -Eo 'voting_power\": \"[0-9]*\"'| awk '{print \$2}' | cut -d/ -f1 | grep -Eo [0-9]*)
+if [ "\$voting_power" = "" ]
+then
+	voting_power="0"
+fi
+
+#LOGS
+echo -e "cosmos status report: moniker=\${moniker}, latest_block_height=\${latest_block_height}, catching_up=\${catching_up}, voting_power=\${voting_power}"
+
+if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
+then
+cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP
+# TYPE my_cosmos_latest_block_height gauge
+\$metric_1 \$latest_block_height
+# TYPE my_cosmos_catching_up gauge
+\$metric_2 \$catching_up
+# TYPE my_cosmos_voting_power gauge
+\$metric_3 \$voting_power
+EOF
+echo -e "sended to pushgataway."
+fi
+}
+
+while true; do
+	getMetrics
+	echo "sleep 120 sec."
+	sleep 120
+done
+
+EOF1
+
+chmod +x /usr/local/bin/cosmos_exporter.sh
+
+sudo tee <<EOF >/dev/null /etc/systemd/system/cosmos_exporter.service
+[Unit]
+Description=Cosmos exporter
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=root
+Group=root
+Type=simple
+ExecStart=/usr/local/bin/cosmos_exporter.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload && sudo systemctl enable cosmos_exporter && sudo systemctl start cosmos_exporter
+ 
+VAR=$(systemctl is-active cosmos_exporter.service)
+
+if [ "$VAR" = "active" ]
+then
+	echo ""
+	echo -e "cosmos_exporter.service \e[32minstalled and works\e[39m! You can check logs by: journalctl -u cosmos_exporter -f"
+	echo ""
+else
+	echo ""
+	echo -e "Something went wrong. \e[31mInstallation failed\e[39m! You can check logs by: journalctl -u cosmos_exporter -f"
+	echo ""
+fi
+read -n 1 -s -r -p "Press any key to continue..."
+}
+
 ###################################################################################
 while true; do
 
