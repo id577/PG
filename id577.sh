@@ -153,6 +153,7 @@ scrape_configs:
     static_configs:
       - targets: ["localhost:9090"]
 EOF
+fi
 cd
 
 sudo tee <<EOF >/dev/null /etc/systemd/system/prometheus.service
