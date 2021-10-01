@@ -1,13 +1,13 @@
 #!/bin/bash
 
-#VERSION 0.2.3b
+#VERSION 0.2.4b
 #VARIABLES
-NODE_EXPORTER_VERSION='1.1.2'
-PROMETHEUS_VERSION='2.28.0'
-GRAFANA_VERSION='8.1.0'
+NODE_EXPORTER_VERSION='1.2.2'
+PROMETHEUS_VERSION='2.30.2'
+GRAFANA_VERSION='8.1.5'
 PUSHGATEWAY_VERSION='1.4.1'
-LOKI_VERSION='2.2.1'
-PROMTAIL_VERSION='2.2.1'
+LOKI_VERSION='2.3.0'
+PROMTAIL_VERSION='2.3.0'
 
 source ~/.bash_profile
 if [ ! $IP_ADDRESS ]
@@ -725,13 +725,6 @@ function getMetrics {
 
 temp=\$(curl -s https://testnet-rpc.kira.network/api/valopers?moniker=\$KIRA_MONIKER)
 count=\$(echo $temp | wc -m)
-if [ "\$count" -lt "20" ]
-then
-	status=0
-	streak=0
-	rank=0
-	top=999
-fi
 
 status_temp=\$(echo \$temp | grep -E -o 'status\":\"[A-Z]*\"' | grep -E -o '[A-Z]*')
 
@@ -745,6 +738,21 @@ fi
 streak=\$(echo \$temp | grep -E -o 'streak\":\"[0-9]*\"' | grep -E -o '[0-9]*')
 rank=\$(echo \$temp | grep -E -o 'rank\":\"[0-9]*\"' | grep -E -o '[0-9]*')
 top=\$(echo \$temp | grep -E -o 'top\":\"[0-9]*\"' | grep -E -o '[0-9]*')
+
+if [ "\$streak" = "" ]
+then
+	status=0
+fi
+
+if [ "\$rank" = "" ]
+then
+	rank=0
+fi
+
+if [ "\$rank" = "" ]
+then
+	rank=0
+fi
 
 #LOGS
 echo -e "Kira status report: status=\${status}, top=\${top}, rank=\${rank}, streak=\${streak}"
