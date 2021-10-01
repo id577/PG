@@ -741,7 +741,7 @@ top=\$(echo \$temp | grep -E -o 'top\":\"[0-9]*\"' | grep -E -o '[0-9]*')
 
 if [ "\$streak" = "" ]
 then
-	status=0
+	streak=0
 fi
 
 if [ "\$rank" = "" ]
@@ -749,9 +749,9 @@ then
 	rank=0
 fi
 
-if [ "\$rank" = "" ]
+if [ "\$top" = "" ]
 then
-	rank=0
+	top=0
 fi
 
 #LOGS
