@@ -136,7 +136,7 @@ sudo cp -r ./consoles /etc/prometheus
 sudo cp -r ./console_libraries /etc/prometheus
 cd .. && rm -rf prometheus*
 
-if [[ -f "/etc/prometheus/prometheus.yml" ]]
+if [[ ! -f "/etc/prometheus/prometheus.yml" ]]
 then
 sudo tee <<EOF >/dev/null /etc/prometheus/prometheus.yml
 global:
