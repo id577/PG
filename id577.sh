@@ -736,11 +736,9 @@ metric_3='my_kira_rank'
 metric_4='my_kira_status'
 
 function getMetrics {
+temp=\$(curl -s http://localhost:11000/api/valopers | jq | grep -10 \$(curl -s http://localhost:56657/status | jq '.result.validator_info.address'))
 
-temp=\$(curl -s https://testnet-rpc.kira.network/api/valopers?moniker=\$KIRA_MONIKER)
-count=\$(echo $temp | wc -m)
-
-status_temp=\$(echo \$temp | grep -E -o 'status\":\"[A-Z]*\"' | grep -E -o '[A-Z]*')
+status_temp=\$(echo \$temp | grep -E -o 'status\": \"[A-Z]*\"' | grep -E -o '[A-Z]*')
 
 if [ "\$status_temp" = "ACTIVE" ]
 then
@@ -749,9 +747,9 @@ else
 	status=0
 fi
 
-streak=\$(echo \$temp | grep -E -o 'streak\":\"[0-9]*\"' | grep -E -o '[0-9]*')
-rank=\$(echo \$temp | grep -E -o 'rank\":\"[0-9]*\"' | grep -E -o '[0-9]*')
-top=\$(echo \$temp | grep -E -o 'top\":\"[0-9]*\"' | grep -E -o '[0-9]*')
+streak=\$(echo \$temp | grep -E -o 'streak\": \"[0-9]*\"' | grep -E -o '[0-9]*')
+rank=\$(echo \$temp | grep -E -o 'rank\": \"[0-9]*\"' | grep -E -o '[0-9]*')
+top=\$(echo \$temp | grep -E -o 'top\": \"[0-9]*\"' | grep -E -o '[0-9]*')
 
 if [ "\$streak" = "" ]
 then
