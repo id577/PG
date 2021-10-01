@@ -136,8 +136,7 @@ sudo cp -r ./consoles /etc/prometheus
 sudo cp -r ./console_libraries /etc/prometheus
 cd .. && rm -rf prometheus*
 
-cd /etc/prometheus/
-if [ -f prometheus.yml ]
+if [[ -f "/etc/prometheus/prometheus.yml" ]]
 then
 sudo tee <<EOF >/dev/null /etc/prometheus/prometheus.yml
 global:
@@ -154,7 +153,6 @@ scrape_configs:
       - targets: ["localhost:9090"]
 EOF
 fi
-cd
 
 sudo tee <<EOF >/dev/null /etc/systemd/system/prometheus.service
 [Unit]
