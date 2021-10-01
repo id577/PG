@@ -394,8 +394,19 @@ read -n 1 -s -r -p "Press any key to continue..."
 ###################################################################################
 function installPromtail {
 
-read -p "Enter loki IP-address and port (example: 142.198.11.12:3100): " IP_LOKI
-read -p "Choose job_name: " JOB_NAME
+if [ ! $IP_LOKI ] 
+then
+	read -p "Enter loki IP-address and port (example: 142.198.11.12:3100): " IP_LOKI
+	echo 'export IP_LOKI='${IP_LOKI} >> $HOME/.bash_profile
+	source ~/.bash_profile
+fi
+if [ ! $JOB_NAME ] 
+then
+	read -p "Choose job_name: " JOB_NAME
+	echo 'export JOB_NAME='${JOB_NAME} >> $HOME/.bash_profile
+	source ~/.bash_profile
+fi
+
 echo -e "Promtail v${PROMTAIL_VERSION} installation starts..."
 sleep 3
 
