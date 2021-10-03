@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#VERSION 0.2.4b
 #VARIABLES
+VERSION='0.2.5'
 NODE_EXPORTER_VERSION='1.2.2'
 PROMETHEUS_VERSION='2.30.2'
 GRAFANA_VERSION='8.1.5'
@@ -877,7 +877,7 @@ function getMetrics {
 
 temp=\$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./run status)
 
-status=\$(echo \$temp | grep -Eo 'Node: [A-Z]*' | cut -d: -f2 | awk '{\$1=\$1};1')
+status=\$(echo \$temp | grep -Eo 'Node(:)* [A-Z]*' | cut -d: -f2 | awk '{\$1=\$1};1')
 if [ "\$status" = "STARTED" ]
 then
 	status=1
@@ -885,7 +885,7 @@ else
 	status=0
 fi
 
-miner_status=\$(echo \$temp | grep -Eo 'Mining: [A-Z]*' | cut -d: -f2 | awk '{\$1=\$1};1')
+miner_status=\$(echo \$temp | grep -Eo 'Mining(:)* [A-Z]*' | cut -d: -f2 | awk '{\$1=\$1};1')
 if [ "\$miner_status" = "STARTED" ]
 then
 	miner_status=1
@@ -911,7 +911,7 @@ then
 	mined_blocks=0
 fi
 
-p2p_status=\$(echo \$temp | grep -Eo 'Network: [A-Z]*' | cut -d: -f2 | awk '{\$1=\$1};1')
+p2p_status=\$(echo \$temp | grep -Eo 'Network(:)* [A-Z]*' | cut -d: -f2 | awk '{\$1=\$1};1')
 if [ "\$p2p_status" = "CONNECTED" ]
 then
 	p2p_status=1
@@ -919,7 +919,7 @@ else
 	p2p_status=0
 fi
 
-is_synced=\$(echo \$temp | grep -Eo 'Blockchain: [A-Z]*' | cut -d: -f2 | awk '{\$1=\$1};1')
+is_synced=\$(echo \$temp | grep -Eo 'Blockchain(:)* [A-Z]*' | cut -d: -f2 | awk '{\$1=\$1};1')
 if [ "\$is_synced" = "SYNCED" ]
 then
 	is_synced=1
@@ -929,7 +929,7 @@ fi
 
 temp=\$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./run accounts:balance $IRONFISH_WALLET)
 
-balance=\$(echo \$temp | tr -d ',' | grep -Eo 'is: \\\$IRON [0-9]+' | grep -Eo '[0-9]+')
+balance=\$(echo \$temp | grep -Eo 'is: \\\$IRON [0-9]+,' | grep -Eo '[0-9]+')
 if [ "\$balance" = "" ]
 then
 	balance=0
@@ -1584,23 +1584,24 @@ read -n 1 -s -r -p "Press any key to continue..."
 while true; do
 
 echo -e ""
+echo -e "# MONITORING TOOLS v${VERSION}"
 echo -e "# Use the script at your own risk!." 
 echo -e "# Choose what to install."
-echo -e " 1 - Node_exporter"
-echo -e " 2 - Prometheus"
-echo -e " 3 - Grafana"
-echo -e " 4 - PushGateway (optional)"
-echo -e " 5 - Loki"
-echo -e " 6 - Promtail"
-echo -e " 7 - Aleo exporter"
-echo -e " 8 - Kira exporter"
-echo -e " 9 - IronFish exporter"
-echo -e " 10 - Minima exporter"
-echo -e " 11 - Cosmos exporter"
-echo -e " 12 - Massa exporter"
-echo -e " 0 - DELETE old custom exporters (such as nym_pg, kira_pg etc.)"   
-echo -e " h - HELP"                                                                  
-echo -e " x - EXIT"
+echo -e " 1) Node_exporter"
+echo -e " 2) Prometheus"
+echo -e " 3) Grafana"
+echo -e " 4) PushGateway (optional)"
+echo -e " 5) Loki"
+echo -e " 6) Promtail"
+echo -e " 7) Aleo exporter"
+echo -e " 8) Kira exporter"
+echo -e " 9) IronFish exporter"
+echo -e " 10) Minima exporter"
+echo -e " 11) Cosmos exporter"
+echo -e " 12) Massa exporter"
+echo -e " 0) DELETE old custom exporters (such as nym_pg, kira_pg etc.)"   
+echo -e " h) HELP"                                                                  
+echo -e " x) EXIT"
 echo -e ""
 read option
 case $option in
