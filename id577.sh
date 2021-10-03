@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #VARIABLES
-VERSION='0.2.5'
+VERSION='0.2.5b'
 NODE_EXPORTER_VERSION='1.2.2'
 PROMETHEUS_VERSION='2.30.2'
 GRAFANA_VERSION='8.1.5'
@@ -877,7 +877,7 @@ function getMetrics {
 
 temp=\$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./run status)
 
-status=\$(echo \$temp | grep -Eo 'Node(:)* [A-Z]*' | cut -d: -f2 | awk '{\$1=\$1};1')
+status=\$(echo \$temp | grep -Eo 'Node(:)* [A-Z]*' | cut -d : -f2 | cut -d ' ' -f2)
 if [ "\$status" = "STARTED" ]
 then
 	status=1
@@ -885,7 +885,7 @@ else
 	status=0
 fi
 
-miner_status=\$(echo \$temp | grep -Eo 'Mining(:)* [A-Z]*' | cut -d: -f2 | awk '{\$1=\$1};1')
+miner_status=\$(echo \$temp | grep -Eo 'Mining(:)* [A-Z]*' | cut -d : -f2 | cut -d ' ' -f2)
 if [ "\$miner_status" = "STARTED" ]
 then
 	miner_status=1
@@ -911,7 +911,7 @@ then
 	mined_blocks=0
 fi
 
-p2p_status=\$(echo \$temp | grep -Eo 'Network(:)* [A-Z]*' | cut -d: -f2 | awk '{\$1=\$1};1')
+p2p_status=\$(echo \$temp | grep -Eo 'Network(:)* [A-Z]*' | cut -d : -f2 | cut -d ' ' -f2)
 if [ "\$p2p_status" = "CONNECTED" ]
 then
 	p2p_status=1
@@ -919,7 +919,7 @@ else
 	p2p_status=0
 fi
 
-is_synced=\$(echo \$temp | grep -Eo 'Blockchain(:)* [A-Z]*' | cut -d: -f2 | awk '{\$1=\$1};1')
+is_synced=\$(echo \$temp | grep -Eo 'Blockchain(:)* [A-Z]*' | cut -d : -f2 | cut -d ' ' -f2)
 if [ "\$is_synced" = "SYNCED" ]
 then
 	is_synced=1
