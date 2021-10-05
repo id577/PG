@@ -736,7 +736,7 @@ metric_3='my_kira_rank'
 metric_4='my_kira_status'
 
 function getMetrics {
-temp=\$(curl -s http://localhost:11000/api/valopers | jq | grep -10 \$(curl -s http://localhost:56657/status | jq '.result.validator_info.address'))
+temp=\$(curl -s http://localhost:11000/api/valopers | jq | grep -10 \$(curl -s http://localhost:36657/status | jq '.result.validator_info.address'))
 
 status_temp=\$(echo \$temp | grep -E -o 'status\": \"[A-Z]*\"' | grep -E -o '[A-Z]*')
 
