@@ -730,7 +730,6 @@ sudo tee <<EOF1 >/dev/null /usr/local/bin/kira_exporter.sh
 
 PUSHGATEWAY_ADDRESS=$PUSHGATEWAY_ADDRESS
 JOB="kira"
-IP=\$IP
 metric_1='my_kira_top'
 metric_2='my_kira_streak'
 metric_3='my_kira_rank'
@@ -772,7 +771,7 @@ echo -e "Kira status report: status=\${status}, top=\${top}, rank=\${rank}, stre
 
 if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
 then
-cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP_ADDRESS
+cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/$IP_ADDRESS
 # TYPE my_kira_top gauge
 \$metric_1 \$top
 # TYPE my_kira_streak gauge
@@ -941,7 +940,7 @@ echo -e "Ironfish status report: node_status=\${status}, miner_status=\${miner_s
 
 if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
 then
-cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP_ADDRESS
+cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/$IP_ADDRESS
 # TYPE my_ironfish_status gauge
 \$metric_1 \$status
 # TYPE my_ironfish_miner_status gauge
@@ -1068,7 +1067,7 @@ echo -e "minima status report: status=\${status}, lastblock=\${lastblock}, conne
 
 if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
 then
-cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP_ADDRESS
+cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/$IP_ADDRESS
 # TYPE my_minima_status gauge
 \$metric_1 \$status
 # TYPE my_minima_lastblock gauge
@@ -1392,7 +1391,7 @@ echo -e "cosmos status report: moniker=\${moniker}, latest_block_height=\${lates
 
 if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
 then
-cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP
+cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/$IP_ADDRESS
 # TYPE my_cosmos_latest_block_height gauge
 \$metric_1 \$latest_block_height
 # TYPE my_cosmos_catching_up gauge
@@ -1522,7 +1521,7 @@ echo -e "massa status report: balance=\${balance}, rolls=\${rolls}, active_rolls
 
 if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
 then
-cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP
+cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/$IP_ADDRESS
 # TYPE my_massa_balance gauge
 \$metric_1 \$balance
 # TYPE my_massa_rolls gauge
