@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #VARIABLES
-VERSION='0.2.5b'
+VERSION='0.2.6b'
 NODE_EXPORTER_VERSION='1.2.2'
 PROMETHEUS_VERSION='2.30.2'
 GRAFANA_VERSION='8.1.5'
@@ -730,6 +730,7 @@ sudo tee <<EOF1 >/dev/null /usr/local/bin/kira_exporter.sh
 
 PUSHGATEWAY_ADDRESS=$PUSHGATEWAY_ADDRESS
 JOB="kira"
+IP=\$IP
 metric_1='my_kira_top'
 metric_2='my_kira_streak'
 metric_3='my_kira_rank'
@@ -771,7 +772,7 @@ echo -e "Kira status report: status=\${status}, top=\${top}, rank=\${rank}, stre
 
 if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
 then
-cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP
+cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP_ADDRESS
 # TYPE my_kira_top gauge
 \$metric_1 \$top
 # TYPE my_kira_streak gauge
@@ -940,7 +941,7 @@ echo -e "Ironfish status report: node_status=\${status}, miner_status=\${miner_s
 
 if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
 then
-cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP
+cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP_ADDRESS
 # TYPE my_ironfish_status gauge
 \$metric_1 \$status
 # TYPE my_ironfish_miner_status gauge
@@ -1067,7 +1068,7 @@ echo -e "minima status report: status=\${status}, lastblock=\${lastblock}, conne
 
 if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
 then
-cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP
+cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/\$IP_ADDRESS
 # TYPE my_minima_status gauge
 \$metric_1 \$status
 # TYPE my_minima_lastblock gauge
