@@ -1582,7 +1582,11 @@ read -n 1 -s -r -p "Press any key to continue..."
 ###################################################################################
 function installStreamrBalance {
 
-read -p "Enter your node's address: " NODE_ADDRESS
+if [ ! $streamr_wallet_address ] 
+then
+	read -p "Enter your node's address: " streamr_wallet_address
+	echo 'export streamr_wallet_address='${streamr_wallet_address}  >> $HOME/.bash_profile
+fi
 
 sudo apt install bc
 
@@ -1590,19 +1594,20 @@ sudo tee <<EOF1 >/dev/null /usr/local/bin/streamr_balance.sh
 #!/bin/bash
 function getMetrics {
 
-wallet_info=\$(wget -qO- "https://testnet1.streamr.network:3013/stats/$NODE_ADDRESS")
+wallet_info=\$(wget -qO- "https://testnet1.streamr.network:3013/stats/$streamr_wallet_address")
 codes_claimed=\$(jq ".claimCount" <<< \$wallet_info)
-codes_percentage=\$(jq ".claimPercentage" <<< \$wallet_info)
-appr_balance_DATA=\$(echo "\$codes_claimed*0.015" | bc -l)
-appr_balance_USDT=\$(echo "`\. <(wget -qO- https://raw.githubusercontent.com/SecorD0/utils/main/parsers/token_price.sh) -ts data -m "\$appr_balance_DATA"`*2" | bc -l)
+if [ "\$codes_claimed" = "" ]
+then
+	codes_claimed=0
+fi
 
 #LOGS
-echo -e "streamr balance: codes_claimed=\${codes_claimed}, codes_percentage=\${codes_percentage}, appr_balance_DATA=\${appr_balance_DATA}, appr_balance_USDT=\${appr_balance_USDT}"
+echo -e "streamr balance: codes_claimed=\${codes_claimed}"
 }
 
 while true; do
 	getMetrics
-	echo "sleep 300 sec."
+	echo "sleep 120 sec."
 	sleep 300
 done
 EOF1
@@ -1611,7 +1616,7 @@ chmod +x /usr/local/bin/streamr_balance.sh
 
 sudo tee <<EOF >/dev/null /etc/systemd/system/streamr_balance.service
 [Unit]
-Description=Streamr balance checker
+Description=Streamr Balance Checker
 Wants=network-online.target
 After=network-online.target
 
