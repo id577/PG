@@ -1584,13 +1584,15 @@ function installStreamrBalance {
 
 read -p "Enter your node's address: " NODE_ADDRESS
 
+sudo tee <<EOF1 >/dev/null /usr/local/bin/streamr_balance.sh
+#!/bin/bash
 function getMetrics {
 
-wallet_info=$(wget -qO- "https://testnet1.streamr.network:3013/stats/$NODE_ADDRESS")
-codes_claimed=$(jq ".claimCount" <<< $wallet_info)
-codes_percentage=$(jq ".claimPercentage" <<< $wallet_info)
+wallet_info=\$(wget -qO- "https://testnet1.streamr.network:3013/stats/$NODE_ADDRESS")
+codes_claimed=\$(jq ".claimCount" <<< $wallet_info)
+codes_percentage=\$(jq ".claimPercentage" <<< $wallet_info)
 appr_balance_DATA=`bc -l <<< "$codes_claimed*0.015"`
-appr_balance_USDT=`. <(wget -qO- https://raw.githubusercontent.com/SecorD0/utils/main/parsers/token_price.sh) -ts data -m "$appr_balance_DATA"`
+appr_balance_USDT=`. <(wget -qO- https://raw.githubusercontent.com/SecorD0/utils/main/parsers/token_price.sh) -ts data -m "\$appr_balance_DATA"`
 
 #LOGS
 echo -e "streamr balance: codes_claimed=\${codes_claimed}, codes_percentage=\${codes_percentage}, appr_balance_DATA=\${appr_balance_DATA}, appr_balance_USDT=\${appr_balance_USDT}"
@@ -1600,7 +1602,6 @@ while true; do
 	echo "sleep 300 sec."
 	sleep 300
 done
-
 EOF1
 
 chmod +x /usr/local/bin/streamr_balance.sh
@@ -1636,8 +1637,6 @@ else
 	echo ""
 fi
 read -n 1 -s -r -p "Press any key to continue..."
-}
-
 }
 
 ###################################################################################
