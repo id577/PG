@@ -1579,6 +1579,66 @@ else
 fi
 read -n 1 -s -r -p "Press any key to continue..."
 }
+###################################################################################
+#!/bin/bash
+
+read -p "Enter your node's address: " NODE_ADDRESS
+
+function getMetrics {
+
+wallet_info=$(wget -qO- "https://testnet1.streamr.network:3013/stats/$NODE_ADDRESS")
+codes_claimed=$(jq ".claimCount" <<< $wallet_info)
+codes_percentage=$(jq ".claimPercentage" <<< $wallet_info)
+appr_balance_DATA=`bc -l <<< "$codes_claimed*0.015"`
+appr_balance_USDT=`. <(wget -qO- https://raw.githubusercontent.com/SecorD0/utils/main/parsers/token_price.sh) -ts data -m "$appr_balance_DATA"`
+
+#LOGS
+echo -e "streamr balance: codes_claimed=\${codes_claimed}, codes_percentage=\${codes_percentage}, appr_balance_DATA=\${appr_balance_DATA}, appr_balance_USDT=\${appr_balance_USDT}"
+
+while true; do
+	getMetrics
+	echo "sleep 300 sec."
+	sleep 300
+done
+
+EOF1
+
+chmod +x /usr/local/bin/streamr_balance.sh
+
+sudo tee <<EOF >/dev/null /etc/systemd/system/streamr_balance.service
+[Unit]
+Description=Streamr balance checker
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=root
+Group=root
+Type=simple
+ExecStart=/usr/local/bin/streamr_balance.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload && sudo systemctl enable streamr_balance && sudo systemctl start streamr_balance
+ 
+VAR=$(systemctl is-active streamr_balance.service)
+
+if [ "$VAR" = "active" ]
+then
+	echo ""
+	echo -e "streamr_balance.service \e[32minstalled and works\e[39m! You can check logs by: journalctl -u streamr_balance -f"
+	echo ""
+else
+	echo ""
+	echo -e "Something went wrong. \e[31mInstallation failed\e[39m! You can check logs by: journalctl -u streamr_balance -f"
+	echo ""
+fi
+read -n 1 -s -r -p "Press any key to continue..."
+}
+
+
 
 ###################################################################################
 while true; do
@@ -1619,6 +1679,7 @@ case $option in
 		12) installMassaExporter;;
 		0) clearInstance;;
 		50) installAleoWatchdog;;
+		51) installStreamrBalance;;
 		"h") echo -e "HELP:"
 			 echo "- You need to install prometheus, grafana, loki and pushgataway (optional) for collecting metrics from your servers. It needs to be done only once and preferably on a separate server."
 			 echo "- After that, go to grafana interface (ip_address:3000) and add datasource (prometeus and loki). Read here for more information: https://grafana.com/docs/grafana/latest/datasources/add-a-data-source/"
