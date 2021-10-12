@@ -1580,7 +1580,7 @@ fi
 read -n 1 -s -r -p "Press any key to continue..."
 }
 ###################################################################################
-#!/bin/bash
+function installStreamrBalance {
 
 read -p "Enter your node's address: " NODE_ADDRESS
 
@@ -1638,7 +1638,7 @@ fi
 read -n 1 -s -r -p "Press any key to continue..."
 }
 
-
+}
 
 ###################################################################################
 while true; do
