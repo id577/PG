@@ -626,7 +626,7 @@ then is_active_miner=\$(systemctl is-active ${aleo_miner_service_name})
 else is_active_miner=0
 fi
 
-blocks_mined_count=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getnodestats", "params": [] }' -H 'content-type: application/json' http://localhost:3030 | grep -E -o "blocks_mined\":[0-9]*" | grep -E -o "[0-9]*")
+blocks_mined_count=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getnodestats", "params": [] }' -H 'content-type: application/json' http://localhost:3030 | grep -E -o "mined\":[0-9]*" | grep -E -o "[0-9]*")
 if [ "\$blocks_mined_count" = "" ]
 then blocks_mined_count=0
 fi
