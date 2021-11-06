@@ -1141,14 +1141,14 @@ then
 	echo 'export COSMOS_NODE_IP='${COSMOS_NODE_IP} >> $HOME/.bash_profile
 fi
 
-COSMOS_NODES=("anoma" "evmos" "rizon" "idep" "althea" "stratos" "umee" "onomy") 
+COSMOS_NODES=("anomad" "evmosd" "rizond" "idepd" "althead" "stratosd" "umeed" "onomyd") 
  
 for item in ${COSMOS_NODES[*]}
 do
-if [  -f "${HOME}/.${item}" ]
+if [  -f "/etc/systemd/system/${item}.service" ]
 	then
 		echo -e "${item} founded!"
-		DAEMON="${item}d"
+		DAEMON="${item}"
 		echo 'export DAEMON='${DAEMON} >> $HOME/.bash_profile
 		break
 fi
@@ -1156,7 +1156,7 @@ done
 
 if [ ! $DAEMON ]
 	then
-		echo "no cosmos node founded!"
+		echo -e "\e[31mInstallation failed\e[39m! No supported cosmos node founded!"
 		return 1
 fi
 
@@ -1179,7 +1179,6 @@ sudo tee <<EOF1 >/dev/null /usr/local/bin/cosmos_exporter.sh
 
 PUSHGATEWAY_ADDRESS=$PUSHGATEWAY_ADDRESS
 JOB="cosmos"
-NODE_IP="${IP_ADDRESS}:26657"
 metric_1='my_cosmos_latest_block_height'
 metric_2='my_cosmos_catching_up'
 metric_3='my_cosmos_voting_power'
