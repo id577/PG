@@ -409,10 +409,9 @@ then
 	echo 'export JOB_NAME='${JOB_NAME} >> $HOME/.bash_profile
 	source ~/.bash_profile
 fi
-
+source $HOME/.bash_profile
 echo -e "Promtail v${PROMTAIL_VERSION} installation starts..."
 sleep 3
-
 CV=$(systemctl list-unit-files | grep "promtail")
 if [ "$CV" != "" ]
 then
@@ -521,16 +520,15 @@ function installAleoExporter {
 if [ ! $PUSHGATEWAY_ADDRESS ] 
 then
 	read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091 or leave empty if you don't use pushgateway): " PUSHGATEWAY_ADDRESS
-	echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
-	source ~/.bash_profile
+	if [ "$PUSHGATEWAY_ADDRESS" != "" ] 
+	then
+		echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
+	fi
 fi
-
 echo -e "Aleo_exporter installation starts..."
 sleep 3
-
 aleo_service_name=""
 aleo_miner_service_name=""
-
 CV=$(systemctl list-unit-files | grep "aleo_exporter.service")
 if [ "$CV" != "" ]
 then
@@ -539,35 +537,30 @@ then
 	rm -rf /usr/local/bin/aleo_exporter.sh
 	rm -rf /etc/systemd/system/aleo_exporter*
 fi
-
 CV=$(systemctl list-unit-files | grep "aleo.service")
 if [ "$CV" != "" ]
 then
 	echo -e "aleo.service founded!"
 	aleo_service_name="aleo.service"
 fi
-
 CV=$(systemctl list-unit-files | grep "aleod.service")
 if [ "$CV" != "" ]
 then
 	echo -e "aleod.service founded!"
 	aleo_service_name="aleod.service"
 fi
-
 CV=$(systemctl list-unit-files | grep "aleo-miner.service")
 if [ "$CV" != "" ]
 then
 	echo -e "aleo-miner.service founded!"
 	aleo_miner_service_name="aleo-miner.service"
 fi
-
 CV=$(systemctl list-unit-files | grep "aleod-miner.service")
 if [ "$CV" != "" ]
 then
 	echo -e "aleod-miner.service founded!"
 	aleo_miner_service_name="aleod-miner.service"
 fi
-
 if [ "$aleo_service_name" == "" ] && [ "$aleo_miner_service_name" == "" ]
 then
 	echo -e "No aleo service was founded. Are you sure that aleo is installed as a service?"
@@ -575,6 +568,7 @@ then
 	echo -e "if your aleo is not installed as a service, some metrics will not work!"
 	read -n 1 -s -r -p "Press any key to continue or ctrl+c to abort installion"
 fi
+source $HOME/.bash_profile
 
 sudo tee <<EOF1 >/dev/null /usr/local/bin/aleo_exporter.sh
 #!/bin/bash
@@ -701,15 +695,14 @@ function installKiraExporter {
 if [ ! $PUSHGATEWAY_ADDRESS ] 
 then
 	read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091 or leave empty if you don't use pushgateway): " PUSHGATEWAY_ADDRESS
-	echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
-	source ~/.bash_profile
+	if [ "$PUSHGATEWAY_ADDRESS" != "" ] 
+	then
+		echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
+	fi
 fi
-
 echo -e "Kira_exporter installation starts..."
 sleep 3
-
 CV=$(systemctl list-unit-files | grep "kira_exporter.service")
-
 if [ "$CV" != "" ]
 then
 	echo -e "Founded kira_exporter.service. Deleting..."
@@ -717,13 +710,13 @@ then
 	rm -rf /usr/local/bin/kira_exporter.sh
 	rm -rf /etc/systemd/system/kira_exporter*
 fi
-
 if [ ! $KIRA_MONIKER ]
 then
 	read -p "Enter Moniker of your node: " KIRA_MONIKER
 	echo 'export KIRA_MONIKER='${KIRA_MONIKER} >> $HOME/.bash_profile
 	source ~/.bash_profile
 fi
+source $HOME/.bash_profile
 
 sudo tee <<EOF1 >/dev/null /usr/local/bin/kira_exporter.sh
 #!/bin/bash
@@ -841,15 +834,15 @@ function installIronfishExporter {
 if [ ! $PUSHGATEWAY_ADDRESS ] 
 then
 	read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091 or leave empty if you don't use pushgateway): " PUSHGATEWAY_ADDRESS
-	echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
-	source ~/.bash_profile
+	if [ "$PUSHGATEWAY_ADDRESS" != "" ] 
+	then
+		echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
+	fi
 fi
-
+source $HOME/.bash_profile
 echo -e "ironfish_exporter installation starts..."
 sleep 3
-
 CV=$(systemctl list-unit-files | grep "ironfish_exporter.service")
-
 if [ "$CV" != "" ]
 then
 	echo -e "Founded ironfish_exporter.service. Deleting..."
@@ -1012,15 +1005,15 @@ function installMinimaExporter {
 if [ ! $PUSHGATEWAY_ADDRESS ] 
 then
 	read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091 or leave empty if you don't use pushgateway): " PUSHGATEWAY_ADDRESS
-	echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
-	source ~/.bash_profile
+	if [ "$PUSHGATEWAY_ADDRESS" != "" ] 
+	then
+		echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
+	fi
 fi
-
+source $HOME/.bash_profile
 echo -e "minima_exporter installation starts..."
 sleep 3
-
 CV=$(systemctl list-unit-files | grep "minima_exporter.service")
-
 if [ "$CV" != "" ]
 then
 	echo -e "Founded minima_exporter.service. Deleting..."
@@ -1028,6 +1021,7 @@ then
 	rm -rf /usr/local/bin/minima_exporter.sh
 	rm -rf /etc/systemd/system/minima_exporter*
 fi
+
 
 sudo tee <<EOF1 >/dev/null /usr/local/bin/minima_exporter.sh
 #!/bin/bash
@@ -1128,7 +1122,6 @@ function installCosmosExporter {
 echo -e "The script supports only one space node per instance. At least for now!"
 read -n 1 -s -r -p "Press any key to continue... or Ctrl+C for skip installation"
 echo ""
-
 if [ ! $PUSHGATEWAY_ADDRESS ] 
 then
 	read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091 or leave empty if you don't use pushgateway): " PUSHGATEWAY_ADDRESS
@@ -1137,7 +1130,6 @@ then
 		echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
 	fi
 fi
-
 if [ ! $DAEMON ]
 then	
 	COSMOS_NODES=("anomad" "evmosd" "idepd" "althead" "stratosd" "umeed" "onomyd") 
@@ -1147,12 +1139,10 @@ then
 		then
 			echo -e "${item} founded!"
 			DAEMON="${item}"
-			echo 'export DAEMON='${DAEMON} >> $HOME/.bash_profile
 			break
 	fi
 	done
 fi
-
 case $DAEMON in
         "anomad") DAEMON="anoma";;
 		"idepd") DAEMON="iond";;
@@ -1164,13 +1154,11 @@ if [ ! $DAEMON ]
 		echo -e "\e[31mInstallation failed\e[39m! No supported cosmos node founded!"
 		return 1
 fi
-
+echo 'export DAEMON='${DAEMON} >> $HOME/.bash_profile
 source $HOME/.bash_profile
 echo -e "Cosmos_exporter installation starts..."
 sleep 3
-
 CV=$(systemctl list-unit-files | grep "cosmos_exporter.service")
-
 if [ "$CV" != "" ]
 then
 	echo -e "Founded cosmos_exporter.service. Deleting..."
@@ -1303,15 +1291,14 @@ function installMassaExporter {
 if [ ! $PUSHGATEWAY_ADDRESS ] 
 then
 	read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091 or leave empty if you don't use pushgateway): " PUSHGATEWAY_ADDRESS
-	echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
-	source ~/.bash_profile
+	if [ "$PUSHGATEWAY_ADDRESS" != "" ] 
+	then
+		echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
+	fi
 fi
-
 echo -e "massa_exporter installation starts..."
 sleep 3
-
 CV=$(systemctl list-unit-files | grep "massa_exporter.service")
-
 if [ "$CV" != "" ]
 then
 	echo -e "Founded massa_exporter.service. Deleting..."
@@ -1319,7 +1306,7 @@ then
 	rm -rf /usr/local/bin/massa_exporter.sh
 	rm -rf /etc/systemd/system/massa_exporter*
 fi
-
+source $HOME/.bash_profile
 
 sudo tee <<EOF1 >/dev/null /usr/local/bin/massa_exporter.sh
 #!/bin/bash
