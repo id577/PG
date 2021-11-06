@@ -1139,8 +1139,8 @@ then
 fi
 
 if [ ! $DAEMON ]
+then	
 	COSMOS_NODES=("anomad" "evmosd" "rizond" "idepd" "althead" "stratosd" "umeed" "onomyd") 
- 
 	for item in ${COSMOS_NODES[*]}
 	do
 	if [  -f "/etc/systemd/system/${item}.service" ]
@@ -1164,9 +1164,6 @@ then
 	COSMOS_NODE_IP=$($(which ${DAEMON}) config | grep -Eo '"node": ".+"' | awk '{print $2}' | sed 's/"//g')
 	echo 'export COSMOS_NODE_IP='${IP_ADDRESS}:${COSMOS_NODE_PORT} >> $HOME/.bash_profile
 fi
-
-
-
 
 source $HOME/.bash_profile
 echo -e "Cosmos_exporter installation starts..."
