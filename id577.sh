@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #VARIABLES
-VERSION='0.2.7b'
+VERSION='0.2.8b'
 NODE_EXPORTER_VERSION='1.2.2'
 PROMETHEUS_VERSION='2.30.2'
 GRAFANA_VERSION='8.1.5'
@@ -1217,9 +1217,14 @@ then
 	voting_power=0
 fi
 
+
+
 if [ "\$DAEMON" != "" ]
 then
-	jailed=\$($(which ${DAEMON}) query staking validators --limit 10000 --output json | jq -r '.validators[] | select(.description.moniker=='\"\$moniker\"')')
+	case $DAEMON in    
+		"iond" | "althea" | "evmosd" | "umeed") jailed=\$($(which ${DAEMON}) query staking validators --limit 10000 --output json | jq -r '.validators[] | select(.description.moniker=='\"\$moniker\"')');;
+		"stchaincli") jailed=\$(stchaincli query staking validator $(stchaincli keys show \$moniker --bech val --address --keyring-backend test) --trust-node --node `cat "$HOME/.stchaind/config/config.toml" | grep -oPm1 "(?<=^laddr = \")([^%]+)(?=\")"` | grep -Eo "jailed: (true|false)" | grep -Eo "(true|false)")
+	esac
 	if [ "\$jailed" = "" ] || [ "\$jailed" = "true" ]
 	then
 		jailed=1
