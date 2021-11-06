@@ -1120,7 +1120,7 @@ read -n 1 -s -r -p "Press any key to continue..."
 function installCosmosExporter {
 
 echo -e "The script supports only one cosmos node per instance. At least for now!"
-echo "Supported cosmos nodes: Althea, Evmos, Anoma, Idep, Stratos, Umee, Onomy"
+
 read -n 1 -s -r -p "Press any key to continue or CRTL+C for skip installation"
 echo ""
 if [ ! $PUSHGATEWAY_ADDRESS ] 
@@ -1144,8 +1144,7 @@ then
 	fi
 	done
 fi
-case $DAEMON in
-        "anomad") DAEMON="anoma";;
+case $DAEMON in    
 		"idepd") DAEMON="iond";;
         "althead") DAEMON="althea";;
 		"stratosd") DAEMON="stchaincli"
@@ -1153,11 +1152,12 @@ esac
 
 if [ ! $DAEMON ]
 	then
-		echo -e "\e[31mInstallation failed\e[39m! No supported cosmos node founded!"
-		return 1
+		echo -e "No supported cosmos node founded! Not all spript functions will be active"
+		echo "Supported cosmos nodes: Althea, Evmos, Anoma, Idep, Stratos, Umee, Onomy"
+	else
+		echo 'export DAEMON='${DAEMON} >> $HOME/.bash_profile
 fi
-
-echo 'export DAEMON='${DAEMON} >> $HOME/.bash_profile
+sleep 3
 source $HOME/.bash_profile
 echo -e "Cosmos_exporter installation starts..."
 sleep 3
@@ -1177,6 +1177,7 @@ sudo tee <<EOF1 >/dev/null /usr/local/bin/cosmos_exporter.sh
 
 PUSHGATEWAY_ADDRESS=$PUSHGATEWAY_ADDRESS
 JOB="cosmos"
+DAEMON=$DAEMON
 metric_1='my_cosmos_latest_block_height'
 metric_2='my_cosmos_catching_up'
 metric_3='my_cosmos_voting_power'
@@ -1220,13 +1221,17 @@ then
 	voting_power=0
 fi
 
-
-jailed=\$($(which ${DAEMON}) query staking validators --limit 10000 --output json | jq -r '.validators[] | select(.description.moniker=='\"\$moniker\"')')
-if [ "\$jailed" = "" ] || [ "\$jailed" = "true" ]
+if [ "\$DAEMON" != "" ]
 then
-	jailed=1
+	jailed=\$($(which ${DAEMON}) query staking validators --limit 10000 --output json | jq -r '.validators[] | select(.description.moniker=='\"\$moniker\"')')
+	if [ "\$jailed" = "" ] || [ "\$jailed" = "true" ]
+	then
+		jailed=1
+	else
+		jailed=0
+	fi
 else
-	jailed=0
+	jailed="n/a"
 fi
 
 #LOGS
