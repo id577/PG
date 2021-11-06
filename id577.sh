@@ -83,8 +83,8 @@ Wants=network-online.target
 After=network-online.target
 
 [Service]
-User=root
-Group=root
+User=$USER
+Group=$USER
 Type=simple
 ExecStart=/usr/local/bin/node_exporter
 
@@ -161,8 +161,8 @@ Wants=network-online.target
 After=network-online.target
 
 [Service]
-User=root
-Group=root
+User=$USER
+Group=$USER
 Type=simple
 ExecStart=/usr/local/bin/prometheus \
 --web.enable-admin-api \
@@ -242,8 +242,8 @@ Wants=network-online.target
 After=network-online.target
 
 [Service]
-User=root
-Group=root
+User=$USER
+Group=$USER
 Type=simple
 ExecStart=/usr/local/bin/pushgateway
 
@@ -368,7 +368,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=root
+User=$USER
 ExecStart=/etc/loki/loki -config.file /etc/loki/loki-local-config.yaml
 
 [Install]
@@ -491,7 +491,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=root
+User=$USER
 ExecStart=/etc/promtail/promtail -config.file /etc/promtail/promtail-local-config.yaml
 
 [Install]
@@ -670,8 +670,8 @@ Description=Aleo Metrics Exporter
 Wants=network-online.target
 After=network-online.target
 [Service]
-User=root
-Group=root
+User=$USER
+Group=$USER
 Type=simple
 ExecStart=/usr/local/bin/aleo_exporter.sh
 [Install]
@@ -802,8 +802,8 @@ Wants=network-online.target
 After=network-online.target
 
 [Service]
-User=root
-Group=root
+User=$USER
+Group=$USER
 Type=simple
 ExecStart=/usr/local/bin/kira_exporter.sh
 
@@ -979,10 +979,10 @@ Wants=network-online.target
 After=network-online.target
 
 [Service]
-User=root
-Group=root
+User=$USER
+Group=$USER
 Type=simple
-WorkingDirectory=/root/ironfish/ironfish-cli/bin 
+WorkingDirectory=/$HOME/ironfish/ironfish-cli/bin 
 ExecStart=/usr/local/bin/ironfish_exporter.sh
 
 [Install]
@@ -1096,8 +1096,8 @@ Wants=network-online.target
 After=network-online.target
 
 [Service]
-User=root
-Group=root
+User=$USER
+Group=$USER
 Type=simple 
 ExecStart=/usr/local/bin/minima_exporter.sh
 
@@ -1138,13 +1138,6 @@ then
 	fi
 fi
 
-if [ ! $COSMOS_NODE_IP ] 
-then
-	read -p "Enter your cosmos node port (press [ENTER] for default (26657)): " COSMOS_NODE_PORT
-	COSMOS_NODE_PORT={COSMOS_NODE_PORT:-26657}
-	echo 'export COSMOS_NODE_IP='${IP_ADDRESS}:${COSMOS_NODE_PORT} >> $HOME/.bash_profile
-fi
-
 if [ ! $DAEMON ]
 	COSMOS_NODES=("anomad" "evmosd" "rizond" "idepd" "althead" "stratosd" "umeed" "onomyd") 
  
@@ -1165,6 +1158,15 @@ if [ ! $DAEMON ]
 		echo -e "\e[31mInstallation failed\e[39m! No supported cosmos node founded!"
 		return 1
 fi
+
+if [ ! $COSMOS_NODE_IP ] 
+then
+	COSMOS_NODE_IP=$($(which ${DAEMON}) config | grep -Eo '"node": ".+"' | awk '{print $2}' | sed 's/"//g')
+	echo 'export COSMOS_NODE_IP='${IP_ADDRESS}:${COSMOS_NODE_PORT} >> $HOME/.bash_profile
+fi
+
+
+
 
 source $HOME/.bash_profile
 echo -e "Cosmos_exporter installation starts..."
@@ -1273,8 +1275,8 @@ Wants=network-online.target
 After=network-online.target
 
 [Service]
-User=root
-Group=root
+User=$USER
+Group=$USER
 Type=simple
 ExecStart=/usr/local/bin/cosmos_exporter.sh
 
@@ -1407,8 +1409,8 @@ Wants=network-online.target
 After=network-online.target
 
 [Service]
-User=root
-Group=root
+User=$USER
+Group=$USER
 Type=simple
 ExecStart=/usr/local/bin/massa_exporter.sh
 
@@ -1474,8 +1476,8 @@ Wants=network-online.target
 After=network-online.target
 
 [Service]
-User=root
-Group=root
+User=$USER
+Group=$USER
 Type=simple
 ExecStart=/usr/local/bin/streamr_balance.sh
 
