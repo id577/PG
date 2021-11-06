@@ -1147,7 +1147,8 @@ fi
 case $DAEMON in
         "anomad") DAEMON="anoma";;
 		"idepd") DAEMON="iond";;
-        "althead") DAEMON="althea"
+        "althead") DAEMON="althea";;
+		"stratosd") DAEMON="stchaincli"
 esac
 
 if [ ! $DAEMON ]
@@ -1155,6 +1156,7 @@ if [ ! $DAEMON ]
 		echo -e "\e[31mInstallation failed\e[39m! No supported cosmos node founded!"
 		return 1
 fi
+
 echo 'export DAEMON='${DAEMON} >> $HOME/.bash_profile
 source $HOME/.bash_profile
 echo -e "Cosmos_exporter installation starts..."
@@ -1167,6 +1169,8 @@ then
 	rm -rf /usr/local/bin/cosmos_exporter.sh
 	rm -rf /etc/systemd/system/cosmos_exporter*
 fi
+
+
 
 sudo tee <<EOF1 >/dev/null /usr/local/bin/cosmos_exporter.sh
 #!/bin/bash
@@ -1217,7 +1221,7 @@ then
 fi
 
 
-jailed=\$($(which $DAEMON) query staking validators --limit 10000 --output json | jq -r '.validators[] | select(.description.moniker=='\"\$moniker\"')')
+jailed=\$($(which ${DAEMON}) query staking validators --limit 10000 --output json | jq -r '.validators[] | select(.description.moniker=='\"\$moniker\"')')
 if [ "\$jailed" = "" ] || [ "\$jailed" = "true" ]
 then
 	jailed=1
