@@ -1182,47 +1182,31 @@ metric_4='my_cosmos_jailed'
 function getMetrics {
 temp=\$(curl -s localhost:26657/status)
 
-moniker=\$(echo \$temp | grep -Eo 'moniker\": \"[a-zA-Z0-9]*\"'| awk '{print \$2}' | cut -d/ -f1 | grep -Eo "[A-Za-z0-9]*")
-
+moniker=\$(echo \$temp | jq .result.node_info.moniker | sed 's/"//g')
+latest_block_height=\$(echo \$temp | jq .result.sync_info.latest_block_height | sed 's/"//g')
+catching_up=\$(echo \$temp | jq .result.sync_info.catching_up | sed 's/"//g')
+voting_power=\$(echo \$temp | jq .result.validator_info.voting_power | sed 's/"//g')
 if [ "\$moniker" = "" ]
 then
 	moniker="n/a"
-fi
-
-latest_block_height=\$(echo \$temp | grep -Eo 'latest_block_height\": \"[0-9]*\"'| awk '{print \$2}' | cut -d/ -f1 | grep -Eo [0-9]*)
-if [ "\$latest_block_height" = "" ]
+elif [ "\$latest_block_height" = "" ]
 then
 	latest_block_height=0
-fi
-
-catching_up=\$(echo \$temp | grep -Eo 'catching_up\": [a-z]*' | grep -E -o "(true|false)")
-if [ "\$catching_up" = "" ]
+elif [ "\$catching_up" = "" ] || [ "\$catching_up" = "true" ]
 then
 	catching_up=1
-fi
-
-if [ "\$catching_up" = "true" ]
-then
-	catching_up=1
-fi
-
-if [ "\$catching_up" = "false" ]
-then
+else 
 	catching_up=0
 fi
-
-voting_power=\$(echo \$temp | grep -Eo 'voting_power\": \"[0-9]*\"'| awk '{print \$2}' | cut -d/ -f1 | grep -Eo [0-9]*)
 if [ "\$voting_power" = "" ]
 then
 	voting_power=0
 fi
 
-
-
 if [ "\$DAEMON" != "" ]
 then
 	case \$DAEMON in  
-		"iond" | "althea" | "evmosd" | "umeed") jailed=\$(\$(which \${DAEMON}) query staking validators --limit 10000 --output json | jq -r '.validators[] | select(.description.moniker=='\"\$moniker\"')');;
+		"iond" | "althea" | "evmosd" | "umeed") jailed=\$(\$(which \${DAEMON}) query staking validators --limit 10000 --output json | jq -r '.validators[] | select(.description.moniker=='\"\$moniker\"')' | jq -r '.jailed');;
 		"stchaincli") jailed=\$(stchaincli query staking validator \$(stchaincli keys show \$moniker --bech val --address --keyring-backend test) --trust-node --node \$(cat "$HOME/.stchaind/config/config.toml" | grep -oPm1 "(?<=^laddr = \")([^%]+)(?=\")") | grep -Eo "jailed: (true|false)" | grep -Eo "(true|false)")
 	esac
 	if [ "\$jailed" = "" ] || [ "\$jailed" = "true" ]
@@ -1238,7 +1222,7 @@ fi
 #LOGS
 echo -e "cosmos status report: moniker=\${moniker}, latest_block_height=\${latest_block_height}, catching_up=\${catching_up}, voting_power=\${voting_power}, jailed=\${jailed}"
 
-if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
+if [ "\$PUSHGATEWAY_ADDRESS" != "" ] && [ "\$DAEMON" != "" ]
 then
 cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/$IP_ADDRESS
 # TYPE my_cosmos_latest_block_height gauge
