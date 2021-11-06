@@ -1127,7 +1127,7 @@ function installCosmosExporter {
 
 echo -e "The script supports only one space node per instance. At least for now!"
 read -n 1 -s -r -p "Press any key to continue... or Ctrl+C for skip installation"
-
+echo ""
 
 if [ ! $PUSHGATEWAY_ADDRESS ] 
 then
@@ -1140,7 +1140,7 @@ fi
 
 if [ ! $DAEMON ]
 then	
-	COSMOS_NODES=("anomad" "evmosd" "rizond" "idepd" "althead" "stratosd" "umeed" "onomyd") 
+	COSMOS_NODES=("anomad" "evmosd" "idepd" "althead" "stratosd" "umeed" "onomyd") 
 	for item in ${COSMOS_NODES[*]}
 	do
 	if [  -f "/etc/systemd/system/${item}.service" ]
@@ -1153,16 +1153,16 @@ then
 	done
 fi
 
+case $DAEMON in
+        "anomad") DAEMON="anoma";;
+		"idepd") DAEMON="iond";;
+        "althead") DAEMON="althea"
+esac
+
 if [ ! $DAEMON ]
 	then
 		echo -e "\e[31mInstallation failed\e[39m! No supported cosmos node founded!"
 		return 1
-fi
-
-if [ ! $COSMOS_NODE_IP ] 
-then
-	COSMOS_NODE_IP=$($(which ${DAEMON}) config | grep -Eo '"node": ".+"' | awk '{print $2}' | sed 's/"//g')
-	echo 'export COSMOS_NODE_IP='${IP_ADDRESS}:${COSMOS_NODE_PORT} >> $HOME/.bash_profile
 fi
 
 source $HOME/.bash_profile
@@ -1228,7 +1228,7 @@ then
 fi
 
 
-jailed=\$($DAEMON query staking validators --node "$COSMOS_NODE_IP" --limit 10000 --output json | jq -r '.validators[] | select(.description.moniker=='\"\$moniker\"')')
+jailed=\$($DAEMON query staking validators --limit 10000 --output json | jq -r '.validators[] | select(.description.moniker=='\"\$moniker\"')')
 if [ "\$jailed" = "" ] || [ "\$jailed" = "true" ]
 then
 	jailed=1
