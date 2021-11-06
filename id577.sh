@@ -1120,7 +1120,8 @@ read -n 1 -s -r -p "Press any key to continue..."
 function installCosmosExporter {
 
 echo -e "The script supports only one space node per instance. At least for now!"
-read -n 1 -s -r -p "Press any key to continue... or Ctrl+C for skip installation"
+echo "Supported cosmos nodes: Althea, Evmos, Anoma, Idep, Stratos, Umee, Onomy"
+read -n 1 -s -r -p "Press any key to continue or CRTL+C for skip installation"
 echo ""
 if [ ! $PUSHGATEWAY_ADDRESS ] 
 then
@@ -1216,7 +1217,7 @@ then
 fi
 
 
-jailed=\$($DAEMON query staking validators --limit 10000 --output json | jq -r '.validators[] | select(.description.moniker=='\"\$moniker\"')')
+jailed=\$($(which $DAEMON) query staking validators --limit 10000 --output json | jq -r '.validators[] | select(.description.moniker=='\"\$moniker\"')')
 if [ "\$jailed" = "" ] || [ "\$jailed" = "true" ]
 then
 	jailed=1
