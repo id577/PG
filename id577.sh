@@ -1119,7 +1119,7 @@ read -n 1 -s -r -p "Press any key to continue..."
 ###################################################################################
 function installCosmosExporter {
 
-echo -e "The script supports only one space node per instance. At least for now!"
+echo -e "The script supports only one cosmos node per instance. At least for now!"
 echo "Supported cosmos nodes: Althea, Evmos, Anoma, Idep, Stratos, Umee, Onomy"
 read -n 1 -s -r -p "Press any key to continue or CRTL+C for skip installation"
 echo ""
