@@ -1117,7 +1117,7 @@ read -n 1 -s -r -p "Press any key to continue..."
 
 ###################################################################################
 function installCosmosExporter {
-
+SUPPORTER_NODES="Althea, Evmos, Idep, Stratos, Umee"
 echo -e "The script supports only one cosmos node per instance. At least for now!"
 read -n 1 -s -r -p "Press any key to continue or CRTL+C for skip installation"
 echo ""
@@ -1131,7 +1131,7 @@ then
 fi
 if [ ! $DAEMON ]
 then	
-	COSMOS_NODES=("evmosd" "idepd" "althead" "stratosd" "umeed") 
+	COSMOS_NODES=("evmosd" "iond" "althead" "stratosd" "umeed") 
 	for item in ${COSMOS_NODES[*]}
 	do
 	if [  -f "/etc/systemd/system/${item}.service" ]
@@ -1151,7 +1151,7 @@ fi
 if [ ! $DAEMON ]
 	then
 		echo -e "No supported cosmos node founded! Not all spript functions will be active"
-		echo "Supported cosmos nodes: Althea, Evmos, Idep, Stratos, Umee"
+		echo "Supported cosmos nodes: ${SUPPORTER_NODES}"
 	else
 		echo 'export DAEMON='${DAEMON} >> $HOME/.bash_profile
 fi
