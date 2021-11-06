@@ -29,9 +29,8 @@ if [ ! $IP_ADDRESS ]
 			done
 	fi
 	echo 'export IP_ADDRESS='${IP_ADDRESS}  >> $HOME/.bash_profile
-	source ~/.bash_profile
 fi
-
+source $HOME/.bash_profile
 echo -e "Your IP-address is: $IP_ADDRESS"
 sleep 3
 
@@ -1120,7 +1119,6 @@ read -n 1 -s -r -p "Press any key to continue..."
 function installCosmosExporter {
 
 echo -e "The script supports only one cosmos node per instance. At least for now!"
-
 read -n 1 -s -r -p "Press any key to continue or CRTL+C for skip installation"
 echo ""
 if [ ! $PUSHGATEWAY_ADDRESS ] 
@@ -1140,15 +1138,16 @@ then
 		then
 			echo -e "${item} founded!"
 			DAEMON="${item}"
+			case $DAEMON in    
+				"idepd") DAEMON="iond";;
+				"althead") DAEMON="althea";;
+				"stratosd") DAEMON="stchaincli"
+			esac
 			break
 	fi
 	done
 fi
-case $DAEMON in    
-		"idepd") DAEMON="iond";;
-        "althead") DAEMON="althea";;
-		"stratosd") DAEMON="stchaincli"
-esac
+
 if [ ! $DAEMON ]
 	then
 		echo -e "No supported cosmos node founded! Not all spript functions will be active"
