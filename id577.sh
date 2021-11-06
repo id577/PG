@@ -99,7 +99,7 @@ VAR=$(systemctl is-active node_exporter.service)
 if [ "$VAR" = "active" ]
 then
 	echo -e ""
-	echo -e "node_exporter v$NODE_EXPORTER_VERSION \e[32minstalled and works\e[39m    ! Use curl -s http://$IP_ADDRESS:9100/metrics to check Node_exporter."
+	echo -e "node_exporter v$NODE_EXPORTER_VERSION \e[32minstalled and works\e[39m! Use curl -s http://$IP_ADDRESS:9100/metrics to check Node_exporter."
 	echo -e "Dont't forget to add targets for your prometheus. Use 'sudo nano /etc/prometheus/prometheus.yml' on your server with prometheus."
 	echo -e "For additional help go to https://prometheus.io/docs/prometheus/latest/getting_started/"
 	echo -e ""
@@ -1125,6 +1125,10 @@ read -n 1 -s -r -p "Press any key to continue..."
 ###################################################################################
 function installCosmosExporter {
 
+echo -e "The script supports only one space node per instance. At least for now!"
+read -n 1 -s -r -p "Press any key to continue... or Ctrl+C for skip installation"
+
+
 if [ ! $PUSHGATEWAY_ADDRESS ] 
 then
 	read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091 or leave empty if you don't use pushgateway): " PUSHGATEWAY_ADDRESS
@@ -1136,23 +1140,25 @@ fi
 
 if [ ! $COSMOS_NODE_IP ] 
 then
-	read -p "Enter your cosmos node port (press [ENTER] for default (26657)): " COSMOS_NODE_IP
-	COSMOS_NODE_IP=${COSMOS_NODE_IP:-26657}
-	echo 'export COSMOS_NODE_IP='${COSMOS_NODE_IP} >> $HOME/.bash_profile
+	read -p "Enter your cosmos node port (press [ENTER] for default (26657)): " COSMOS_NODE_PORT
+	COSMOS_NODE_PORT={COSMOS_NODE_PORT:-26657}
+	echo 'export COSMOS_NODE_IP='${IP_ADDRESS}:${COSMOS_NODE_PORT} >> $HOME/.bash_profile
 fi
 
-COSMOS_NODES=("anomad" "evmosd" "rizond" "idepd" "althead" "stratosd" "umeed" "onomyd") 
+if [ ! $DAEMON ]
+	COSMOS_NODES=("anomad" "evmosd" "rizond" "idepd" "althead" "stratosd" "umeed" "onomyd") 
  
-for item in ${COSMOS_NODES[*]}
-do
-if [  -f "/etc/systemd/system/${item}.service" ]
-	then
-		echo -e "${item} founded!"
-		DAEMON="${item}"
-		echo 'export DAEMON='${DAEMON} >> $HOME/.bash_profile
-		break
+	for item in ${COSMOS_NODES[*]}
+	do
+	if [  -f "/etc/systemd/system/${item}.service" ]
+		then
+			echo -e "${item} founded!"
+			DAEMON="${item}"
+			echo 'export DAEMON='${DAEMON} >> $HOME/.bash_profile
+			break
+	fi
+	done
 fi
-done
 
 if [ ! $DAEMON ]
 	then
@@ -1223,8 +1229,8 @@ then
 fi
 
 
-jailed=\$($DAEMON query staking validators --node "$COSMOS_NODE_IP" --limit 10000 --output json | jq -r '.validators[] | select(.description.moniker=='\"\$moniker\"')'
-if [ "\$jailed" = "" ] || [ "\$jailed" = "true"
+jailed=\$($DAEMON query staking validators --node "$COSMOS_NODE_IP" --limit 10000 --output json | jq -r '.validators[] | select(.description.moniker=='\"\$moniker\"')')
+if [ "\$jailed" = "" ] || [ "\$jailed" = "true" ]
 then
 	jailed=1
 else
