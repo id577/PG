@@ -1119,7 +1119,7 @@ read -n 1 -s -r -p "Press any key to continue..."
 function installCosmosExporter {
 SUPPORTER_NODES="Althea, Evmos, Idep, Stratos, Umee"
 echo -e "The script supports only one cosmos node per instance. At least for now!"
-read -n 1 -s -r -p "Press any key to continue or CRTL+C for skip installation"
+read -n 1 -s -r -p "Press any key to continue or CRTL+C for abort installation..."
 echo ""
 if [ ! $PUSHGATEWAY_ADDRESS ] 
 then
@@ -1221,9 +1221,9 @@ fi
 
 if [ "\$DAEMON" != "" ]
 then
-	case $DAEMON in    
-		"iond" | "althea" | "evmosd" | "umeed") jailed=\$($(which ${DAEMON}) query staking validators --limit 10000 --output json | jq -r '.validators[] | select(.description.moniker=='\"\$moniker\"')');;
-		"stchaincli") jailed=\$(stchaincli query staking validator \$(stchaincli keys show \$moniker --bech val --address --keyring-backend test) --trust-node --node `cat "$HOME/.stchaind/config/config.toml" | grep -oPm1 "(?<=^laddr = \")([^%]+)(?=\")"` | grep -Eo "jailed: (true|false)" | grep -Eo "(true|false)")
+	case \$DAEMON in  
+		"iond" | "althea" | "evmosd" | "umeed") jailed=\$(\$(which \${DAEMON}) query staking validators --limit 10000 --output json | jq -r '.validators[] | select(.description.moniker=='\"\$moniker\"')');;
+		"stchaincli") jailed=\$(stchaincli query staking validator \$(stchaincli keys show \$moniker --bech val --address --keyring-backend test) --trust-node --node \$(cat "$HOME/.stchaind/config/config.toml" | grep -oPm1 "(?<=^laddr = \")([^%]+)(?=\")") | grep -Eo "jailed: (true|false)" | grep -Eo "(true|false)")
 	esac
 	if [ "\$jailed" = "" ] || [ "\$jailed" = "true" ]
 	then
