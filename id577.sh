@@ -1133,7 +1133,7 @@ then
 fi
 if [ ! $DAEMON ]
 then	
-	COSMOS_NODES=("anomad" "evmosd" "idepd" "althead" "stratosd" "umeed" "onomyd") 
+	COSMOS_NODES=("anomad" "evmosd" "idepd" "althead" "stratosd" "umeed") 
 	for item in ${COSMOS_NODES[*]}
 	do
 	if [  -f "/etc/systemd/system/${item}.service" ]
@@ -1149,11 +1149,10 @@ case $DAEMON in
         "althead") DAEMON="althea";;
 		"stratosd") DAEMON="stchaincli"
 esac
-
 if [ ! $DAEMON ]
 	then
 		echo -e "No supported cosmos node founded! Not all spript functions will be active"
-		echo "Supported cosmos nodes: Althea, Evmos, Anoma, Idep, Stratos, Umee, Onomy"
+		echo "Supported cosmos nodes: Althea, Evmos, Anoma, Idep, Stratos, Umee"
 	else
 		echo 'export DAEMON='${DAEMON} >> $HOME/.bash_profile
 fi
@@ -1169,8 +1168,6 @@ then
 	rm -rf /usr/local/bin/cosmos_exporter.sh
 	rm -rf /etc/systemd/system/cosmos_exporter*
 fi
-
-
 
 sudo tee <<EOF1 >/dev/null /usr/local/bin/cosmos_exporter.sh
 #!/bin/bash
