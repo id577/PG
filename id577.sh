@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #VARIABLES
-VERSION='0.2.6b'
+VERSION='0.2.7b'
 NODE_EXPORTER_VERSION='1.2.2'
 PROMETHEUS_VERSION='2.30.2'
 GRAFANA_VERSION='8.1.5'
@@ -1121,200 +1121,6 @@ else
 fi
 read -n 1 -s -r -p "Press any key to continue..."
 }
-###################################################################################
-function installAleoWatchdog {
-
-echo -e "Aleo_watchdog installation starts..."
-sleep 3
-
-CV=$(systemctl list-unit-files | grep "aleo_watchdog.service")
-
-if [ "$CV" != "" ]
-then
-	echo -e "Founded aleo_watchdog.service. Deleting..."
-	systemctl stop aleo_watchdog && systemctl disable aleo_watchdog
-	rm -rf /usr/local/bin/aleo_watchdog.sh
-	rm -rf /etc/systemd/system/aleo_watchdog*
-fi
-
-sudo tee <<EOF1 >/dev/null /usr/local/bin/aleo_watchdog.sh
-#!/bin/bash
-
-BLK=0
-MND=0
-FAIL_COUNT=0
-FAIL_LIMIT=180
-SLEEP_TIME=600
-AFTER_RESTART_SLEEP_TIME=7200
-
-function waitForAleoMonitor() {
-	while true; do
-	VAR0=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getblockcount", "params": [] }' -H 'content-type: application/json' http://localhost:3030 | grep -E -o "result\":[0-9]*" | grep -E -o "[0-9]*")
-	if [ "\$VAR0" != "" ]; then
-		echo "Aleo monitoring is active!"
-		break
-	else
-		echo "Waiting for Aleo monitoring start..."
-		sleep 30
-	fi
-done
-}
-
-waitForAleoMonitor
-
-function checkBlocks() {
-	VAR1=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getblockcount", "params": [] }' -H 'content-type: application/json' http://localhost:3030 | grep -E -o "result\":[0-9]*" | grep -E -o "[0-9]*")
-	echo \$VAR1
-}
-
-function checkSync() {
-	VAR2=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getnodeinfo", "params": [] }' -H 'content-type: application/json' http://localhost:3030 | grep -E -o "is_syncing\":[A-Za-z]*" | grep -E -o "(true|false)")
-	echo \$VAR2
-}
-
-function checkMining() {
-	VAR3=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getnodestats", "params": [] }' -H 'content-type: application/json' http://localhost:3030 | grep -E -o "blocks_mined\":[0-9]*" | grep -E -o "[0-9]*")
-	echo \$VAR3
-}
-
-function changeServices() {
-	MND=0
-	BLK=0
-	FAIL_COUNT=0
-	if [ \$(systemctl is-active aleod.service) = "active" ]; then
-		systemctl stop aleod && systemctl disable aleod
-		systemctl enable aleod-miner && systemctl start aleod-miner
-		echo "Aleo-miner started... sleep "\$AFTER_RESTART_SLEEP_TIME" sec"
-		sleep \$AFTER_RESTART_SLEEP_TIME
-		waitForAleoMonitor
-	elif [ \$(systemctl is-active aleod-miner.service) = "active" ]; then
-		systemctl stop aleod-miner && systemctl disable aleod-miner
-		systemctl enable aleod && systemctl start aleod
-		echo "Aleo-node started... sleep "\$AFTER_RESTART_SLEEP_TIME" sec"
-		sleep \$AFTER_RESTART_SLEEP_TIME
-		waitForAleoMonitor
-	fi
-}
-
-function restartAleo() {
-	MND=0
-	BLK=0
-	FAIL_COUNT=0
-	if [ \$(systemctl is-active aleod.service) = "active" ]; then
-		systemctl restart aleod
-		echo "Aleo-node was restarted... sleep "\$AFTER_RESTART_SLEEP_TIME" sec"
-		sleep \$AFTER_RESTART_SLEEP_TIME
-		waitForAleoMonitor
-	elif [ \$(systemctl is-active aleod-miner.service) = "active" ]; then
-		systemctl restart aleod-miner
-		echo "Aleo-miner was restarted... sleep "\$AFTER_RESTART_SLEEP_TIME" sec"
-		sleep \$AFTER_RESTART_SLEEP_TIME
-		waitForAleoMonitor
-	fi
-}
-
-while true; do
-echo "--------------------------"
-ACTIVE_INSTANCE=""
-if [ \$(systemctl is-active aleod.service) = "active" ]; then
-	ACTIVE_INSTANCE="aleod.service"
-fi
-if [ \$(systemctl is-active aleod-miner.service) = "active" ]; then
-	ACTIVE_INSTANCE="aleod-miner.service"
-fi
-if [ "\$ACTIVE_INSTANCE" = "" ]; then
-	echo "No ALEO MINER or NODE detected!"
-	sleep 10
-	continue
-fi
-if [ "\$ACTIVE_INSTANCE" = "aleod.service" ]; then
-	if [ "\$BLK" = "0" ]; then
-		BLK=\$(checkBlocks)
-	fi
-	echo "Active SnarkOS instance: NODE"
-	echo "sleep "\$SLEEP_TIME" sec"
-	sleep \$SLEEP_TIME
-	BKL_TEMP=\$(checkBlocks)
-	if [ "\$BLK" = "\$BKL_TEMP" ]; then
-		echo "is_syncing: false. Restarting..."
-		restartAleo
-	else
-		BLK=\$BKL_TEMP
-		echo "is_syncing: true"
-		IS_SYNCING=\$(checkSync)
-		if [ "\$IS_SYNCING" = "false" ]; then
-			echo "is_synced: true. Starting miner..."
-			changeServices
-		else
-			echo "is_synced: false"
-		fi
-	fi
-fi
-if [ "\$ACTIVE_INSTANCE" = "aleod-miner.service" ]; then
-	if [ "\$BLK" = "0" ]; then
-		BLK=\$(checkBlocks)
-	fi
-	echo "Active SnarkOS instance: MINER"
-	echo "sleep "\$SLEEP_TIME" sec"
-	sleep \$SLEEP_TIME
-	BKL_TEMP=\$(checkBlocks)
-	if [ "\$BLK" = "\$BKL_TEMP" ]; then
-		echo "is_syncing: false. Starting node..."
-		changeServices
-	else
-		BLK=\$BKL_TEMP
-		echo "is_syncing: true"
-		IT_MINES=\$(checkMining)
-		if [ "\$MND" = "IT_MINES" ]; then
-			echo "it_miners false. FAIL_COUNT = \${FAIL_COUNT}"
-			((FAIL_COUNT++))
-			echo "it_miners false. FAIL_COUNT = \${FAIL_COUNT} (FAIL_LIMIT = \${FAIL_LIMIT})"
-			if [ "\$FAIL_COUNT" = "\$FAIL_LIMIT" ]; then
-				restartAleo
-			fi
-		else
-			echo "it_mines: true"
-			FAIL_COUNT=0
-		fi
-	fi
-fi
-done
-EOF1
-
-chmod +x /usr/local/bin/aleo_watchdog.sh
-
-sudo tee <<EOF >/dev/null /etc/systemd/system/aleo_watchdog.service
-[Unit]
-Description=Aleo Watchdog
-Wants=network-online.target
-After=network-online.target
-
-[Service]
-User=root
-Group=root
-Type=simple
-ExecStart=/usr/local/bin/aleo_watchdog.sh
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-sudo systemctl daemon-reload && sudo systemctl enable aleo_watchdog && sudo systemctl start aleo_watchdog
- 
-VAR=$(systemctl is-active aleo_watchdog.service)
-
-if [ "$VAR" = "active" ]
-then
-	echo ""
-	echo -e "aleo_watchdog.service \e[32minstalled and works\e[39m! You can check logs by: journalctl -u aleo_watchdog -f"
-	echo ""
-else
-	echo ""
-	echo -e "Something went wrong. \e[31mInstallation failed\e[39m! You can check logs by: journalctl -u aleo_watchdog -f"
-	echo ""
-fi
-read -n 1 -s -r -p "Press any key to continue..."
-}
 
 ###################################################################################
 function installCosmosExporter {
@@ -1322,10 +1128,39 @@ function installCosmosExporter {
 if [ ! $PUSHGATEWAY_ADDRESS ] 
 then
 	read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091 or leave empty if you don't use pushgateway): " PUSHGATEWAY_ADDRESS
-	echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
-	source ~/.bash_profile
+	if [ "$PUSHGATEWAY_ADDRESS" != "" ] 
+	then
+		echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
+	fi
 fi
 
+if [ ! $COSMOS_NODE_IP ] 
+then
+	read -p "Enter your cosmos node port (press [ENTER] for default (26657)): " COSMOS_NODE_IP
+	COSMOS_NODE_IP=${COSMOS_NODE_IP:-26657}
+	echo 'export COSMOS_NODE_IP='${COSMOS_NODE_IP} >> $HOME/.bash_profile
+fi
+
+COSMOS_NODES=("anoma" "evmos" "rizon" "idep" "althea" "stratos" "umee" "onomy") 
+ 
+for item in ${COSMOS_NODES[*]}
+do
+if [  -f "${HOME}/.${item}" ]
+	then
+		echo -e "${item} founded!"
+		DAEMON="${item}d"
+		echo 'export DAEMON='${DAEMON} >> $HOME/.bash_profile
+		break
+fi
+done
+
+if [ ! $DAEMON ]
+	then
+		echo "no cosmos node founded!"
+		return 1
+fi
+
+source $HOME/.bash_profile
 echo -e "Cosmos_exporter installation starts..."
 sleep 3
 
@@ -1344,9 +1179,11 @@ sudo tee <<EOF1 >/dev/null /usr/local/bin/cosmos_exporter.sh
 
 PUSHGATEWAY_ADDRESS=$PUSHGATEWAY_ADDRESS
 JOB="cosmos"
+NODE_IP="${IP_ADDRESS}:26657"
 metric_1='my_cosmos_latest_block_height'
 metric_2='my_cosmos_catching_up'
 metric_3='my_cosmos_voting_power'
+metric_4='my_cosmos_jailed'
 
 function getMetrics {
 temp=\$(curl -s localhost:26657/status)
@@ -1386,8 +1223,17 @@ then
 	voting_power=0
 fi
 
+
+jailed=\$($DAEMON query staking validators --node "$COSMOS_NODE_IP" --limit 10000 --output json | jq -r '.validators[] | select(.description.moniker=='\"\$moniker\"')'
+if [ "\$jailed" = "" ] || [ "\$jailed" = "true"
+then
+	jailed=1
+else
+	jailed=0
+fi
+
 #LOGS
-echo -e "cosmos status report: moniker=\${moniker}, latest_block_height=\${latest_block_height}, catching_up=\${catching_up}, voting_power=\${voting_power}"
+echo -e "cosmos status report: moniker=\${moniker}, latest_block_height=\${latest_block_height}, catching_up=\${catching_up}, voting_power=\${voting_power}, jailed=\${jailed}"
 
 if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
 then
@@ -1398,6 +1244,8 @@ cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/inst
 \$metric_2 \$catching_up
 # TYPE my_cosmos_voting_power gauge
 \$metric_3 \$voting_power
+# TYPE my_cosmos_jailed gauge
+\$metric_3 \$jailed
 EOF
 echo -e "sended to pushgataway."
 fi
