@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #VARIABLES
-VERSION='0.2.81b'
+VERSION='0.2.83b'
 NODE_EXPORTER_VERSION='1.2.2'
 PROMETHEUS_VERSION='2.30.2'
 GRAFANA_VERSION='8.1.5'
@@ -1308,7 +1308,6 @@ sudo tee <<EOF1 >/dev/null /usr/local/bin/massa_exporter.sh
 
 PUSHGATEWAY_ADDRESS=$PUSHGATEWAY_ADDRESS
 JOB="massa"
-
 metric_1='my_massa_balance'
 metric_2='my_massa_rolls'
 metric_3='my_massa_active_rolls'
@@ -1318,40 +1317,51 @@ metric_5='my_massa_outgoing_peers'
 function getMetrics {
 
 cd $HOME/massa/massa-client/
-wallet_info=\$(./massa-client --cli true wallet_info)
+wallet_info=\$(./massa-client wallet_info)
+balance=\$(echo \$wallet_info | grep -Eo "Final balance: [0-9]+[\.]{0,1}[0-9]*" |  grep -Eo "[0-9]+[\.]{0,1}[0-9]*")
+rolls=\$(echo \$wallet_info | grep -Eo "Final rolls: [0-9]+[\.]{0,1}[0-9]*" |  grep -Eo "[0-9]+[\.]{0,1}[0-9]*")
+active_rolls=\$(echo \$wallet_info | grep -Eo "Active rolls: [0-9]+" |  grep -Eo "[0-9]+")
 
-balance=\$(echo \$wallet_info | grep -Eo "final_ledger_data\": \{ \"balance\": \"[0-9]*.[0-9]*" |  grep -Eo "[0-9]*\.[0-9]*")
+status=\$(./massa-client get_status)
+incoming_peers=\$(echo \$status | grep -Eo "In connections: [0-9]+*" | grep -Eo "[0-9]+")
+outgoing_peers=\$(echo \$status | grep -Eo "Out connections: [0-9]+*" | grep -Eo "[0-9]+")
+current_cycle=\$(echo \$status | grep -Eo "Current cycle: [0-9]+*" | grep -Eo "[0-9]+")
+staker_count=\$(echo \$status | grep -Eo "Staker count: [0-9]+*" | grep -Eo "[0-9]+")
+node_id=\$(echo \$status | grep -Eo "Node's ID: \w{50}" | grep -Eo -m 1 "\w{50}" )
+node_version=\$(echo \$status | grep -Eo "Version: TEST.[0-9]+.[0-9]+" | sed 's/V/v/g' | sed 's/: TEST./=/g')
+cd
+
 if [ "\$balance" = "" ]
 then
 	balance=0
-fi
-rolls=\$(echo \$wallet_info | grep -Eo "final_rolls\": [0-9]*"  |  grep -Eo [0-9]*)
-if [ "\$rolls" = "" ]
+elif [ "\$rolls" = "" ]
 then
 	rolls=0
-fi
-active_rolls=\$(echo \$wallet_info | grep -Eo "active_rolls\": [0-9]*"  |  grep -Eo [0-9]*)
-if [ "\$active_rolls" = "" ]
+elif [ "\$active_rolls" = "" ]
 then
 	active_rolls=0
-fi
-
-peers=\$(./massa-client --cli false peers)
-cd
-
-incoming_peers=\$(echo \$peers | grep -Eo 'node_id: [A-Za-z0-9]* \(incoming\)' | wc -l)
-if [ "\$incoming_peers" = "" ]
+elif [ "\$incoming_peers" = "" ]
 then
 	incoming_peers=0
-fi
-outgoing_peers=\$(echo \$peers | grep -Eo 'node_id: [A-Za-z0-9]* \(outgoing\)' | wc -l)
-if [ "\$outgoing_peers" = "" ]
+elif [ "\$outgoing_peers" = "" ]
 then
 	outgoing_peers=0
+elif [ "\$current_cycle" = "" ]
+then
+	current_cycle=0 
+elif [ "\$staker_count" = "" ]
+then
+	staker_count=0 
+elif [ "\$node_id" = "" ]
+then
+	node_id="n/a"
+elif [ "\$node_version" = "" ]
+then
+	node_version="n/a"
 fi
 
 #LOGS
-echo -e "massa status report: balance=\${balance}, rolls=\${rolls}, active_rolls=\${active_rolls}, incoming_peers=\${incoming_peers}, outgoing_peers=\${outgoing_peers}"
+echo -e "massa status report: node_id=\${node_id}, \${node_version}, balance=\${balance}, rolls=\${rolls}, active_rolls=\${active_rolls}, incoming_peers=\${incoming_peers}, outgoing_peers=\${outgoing_peers}, current_cycle=\${current_cycle}, staker_count=\${staker_count}"
 
 if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
 then
