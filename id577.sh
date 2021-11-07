@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #VARIABLES
-VERSION='0.2.83b'
+VERSION='0.2.84b'
 NODE_EXPORTER_VERSION='1.2.2'
 PROMETHEUS_VERSION='2.30.2'
 GRAFANA_VERSION='8.1.5'
@@ -1361,7 +1361,8 @@ then
 fi
 
 #LOGS
-echo -e "massa status report: node_id=\${node_id}, \${node_version}, balance=\${balance}, rolls=\${rolls}, active_rolls=\${active_rolls}, incoming_peers=\${incoming_peers}, outgoing_peers=\${outgoing_peers}, current_cycle=\${current_cycle}, staker_count=\${staker_count}"
+echo -e "massa node info: node_id=\${node_id}, \${node_version}"
+echo -e "massa status report: balance=\${balance}, rolls=\${rolls}, active_rolls=\${active_rolls}, incoming_peers=\${incoming_peers}, outgoing_peers=\${outgoing_peers}, current_cycle=\${current_cycle}, staker_count=\${staker_count}"
 
 if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
 then
@@ -1407,7 +1408,7 @@ ExecStart=/usr/local/bin/massa_exporter.sh
 WantedBy=multi-user.target
 EOF
 
-sudo systemctl daemon-reload && sudo systemctl enable massa_exporter && sudo systemctl start massa_exporter
+sudo systemctl daemon-reload && sudo systemctl enable massa_exporter && sudo systemctl restart massa_exporter
  
 VAR=$(systemctl is-active massa_exporter.service)
 
