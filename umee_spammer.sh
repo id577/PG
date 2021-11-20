@@ -17,8 +17,8 @@ while true; do
   sleep ${DELAY_TIME}
   echo "sleep ${DELAY_TIME} sec"
   WALLET_1_BALANCE=$(umeed query bank balances ${WALLET_1_ADDRESS} | grep -oE "amount: \"[0-9]*" | grep -oE "[0-9]*")
-  sleep 1
+  sleep ${DELAY_TIME}
   WALLET_2_BALANCE=$(umeed query bank balances ${WALLET_2_ADDRESS} | grep -oE "amount: \"[0-9]*" | grep -oE "[0-9]*")
-  sleep 1
+  sleep ${DELAY_TIME}
   echo "WALLET_1_BALANCE=${WALLET_1_BALANCE}, WALLET_2_BALANCE=${WALLET_2_BALANCE}"
 done
