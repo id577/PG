@@ -39,9 +39,9 @@ function spammer(){
 CYCLE=0
 while true; do 
 	CYCLE=$(( $CYCLE + 1 ))
-  echo -e "" >> thread_${1}_logs
-  echo -e "" >> thread_${1}_logs
-  echo -e "" >> thread_${1}_logs
+  echo -e "" >> thread_${1}_logs.txt
+  echo -e "" >> thread_${1}_logs.txt
+  echo -e "" >> thread_${1}_logs.txt
 	echo -e "Starting cycle № ${CYCLE}" >> thread_${1}_logs.txt
 	MAX_BALANCE=0
 	MIN_BALANCE=2147483647
@@ -64,6 +64,7 @@ while true; do
 	done
 	echo -e "Trying to send ${UUMEE_AMOUMT_TO_SEND}uumee from ${MAX_BALANCE_WALLET} to ${MIN_BALANCE_WALLET} ..." >> thread_${1}_logs.txt
 	echo -e "${WALLETS_PASSWORD}\n" | umeed tx bank send ${MAX_BALANCE_WALLET} ${MIN_BALANCE_WALLET} ${UUMEE_AMOUMT_TO_SEND}uumee --chain-id "umeevengers-1c" --from "${MAX_BALANCE_WALLET}" --gas ${GAS_AMOUNT} --fees ${FEES_AMOUNT}uumee --note "${VAL_ADDRESS}" -y >> thread_${1}_logs.txt
+	sleep 1
 done
 }
 
