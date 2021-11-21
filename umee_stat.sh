@@ -1,18 +1,22 @@
 #!/bin/bash
-WALLET_1_ADDRESS="umee1wju82lrr8e5689rh5qum3n6ncjzrkyzfsnm088"
-WALLET_2_ADDRESS="umee1vlm35w9h2lcdwzwn3zxs7ct5w5ud8fx8gaqnl4"
+
+WALLETS=("umee1wju82lrr8e5689rh5qum3n6ncjzrkyzfsnm088" "umee1vlm35w9h2lcdwzwn3zxs7ct5w5ud8fx8gaqnl4")
+START_TX_COUNT=32
 DELAY=10
 
 while true; do
-WALLET_1_TX_COUNT=$(umeed query txs --events="message.sender=${WALLET_1_ADDRESS}" --output json |  jq -r '.txs[].tx.body.memo' | wc -l)
-WALLET_2_TX_COUNT=$(umeed query txs --events="message.sender=${WALLET_2_ADDRESS}" --output json |  jq -r '.txs[].tx.body.memo' | wc -l)
+TRANSACTIONS=$(( 0 - $START_TX_COUNT ))
+WALLET_BALANCES=""
+VAR=1
+for item in ${WALLETS[*]} 
+do
+  TRANSACTIONS=$(( $TRANSACTIONS + $(umeed query txs --events="message.sender=${item}" --output json |  jq -r '.txs[].tx.body.memo' | wc -l) ))
+  TEMP=$(umeed query bank balances ${item} | grep -oE "amount: \"[0-9]*" | grep -oE "[0-9]*")
+  WALLET_BALANCES+=", WALLET_${VAR}=\e[32m${TEMP}\e[39m"
+  VAR=$(( $VAR + 1 )) 
+done
 
-let "TOTAL_TX_COUNT=WALLET_1_TX_COUNT+WALLET_2_TX_COUNT"
-
-WALLET_1_BALANCE=$(umeed query bank balances ${WALLET_1_ADDRESS} | grep -oE "amount: \"[0-9]*" | grep -oE "[0-9]*")
-WALLET_2_BALANCE=$(umeed query bank balances ${WALLET_2_ADDRESS} | grep -oE "amount: \"[0-9]*" | grep -oE "[0-9]*")
-
-RESULT="TRANSACTIONS=\e[32m${TOTAL_TX_COUNT}\e[39m, WALLET_1=\e[32m${WALLET_1_BALANCE}\e[39m, WALLET_2=\e[32m${WALLET_2_BALANCE}\e[39m"
+RESULT="TRANSACTIONS=\e[32m${TRANSACTIONS}\e[39m${WALLET_BALANCES}"
 DOT="."
 clear
 for (( VAR = 0; VAR < $DELAY; VAR++ )) do
