@@ -16,6 +16,7 @@ RPC=("http://193.164.132.24:26657"
 "http://213.246.45.198:26657/"
 "http://172.105.168.226:26657/"
 "http://3.34.147.65:26657/"
+"http://95.111.231.65:26657/"
 )
 TARGET_WALLET="umee1wju82lrr8e5689rh5qum3n6ncjzrkyzfsnm088"
 VAL_ADDRESS="umeevaloper1wju82lrr8e5689rh5qum3n6ncjzrkyzfshuqkd"
