@@ -1,4 +1,5 @@
 #!/bin/bash
+VAL_ADDRESS="umeevaloper1wju82lrr8e5689rh5qum3n6ncjzrkyzfshuqkd"
 SOURCE_WALLET="umee1vlm35w9h2lcdwzwn3zxs7ct5w5ud8fx8gaqnl4"
 SOURCE_WALLET_PASSWORD=""
 TARGET_WALLETS=(
@@ -25,7 +26,7 @@ sleep 5
 for item in ${TARGET_WALLETS[*]}; do
 	echo -e ""
 	echo -e "Trying to send ${UUMEE_AMOUMT_TO_SEND}uumee from ${SOURCE_WALLET} to ${item}..."
-	echo -e "${SOURCE_WALLET_PASSWORD}\n" | umeed tx bank send ${SOURCE_WALLET} ${item} ${UUMEE_AMOUMT_TO_SEND}uumee --chain-id "umeevengers-1c" --from "${2}" --gas ${GAS_AMOUNT} --fees ${FEES_AMOUNT}uumee -y
+	echo -e "${SOURCE_WALLET_PASSWORD}\n" | umeed tx bank send ${SOURCE_WALLET} ${item} ${UUMEE_AMOUMT_TO_SEND}uumee --chain-id "umeevengers-1c" --from "${2}" --gas ${GAS_AMOUNT} --fees ${FEES_AMOUNT}uumee --note "${VAL_ADDRESS}" -y
 	sleep 1
 done
 echo -e ""
