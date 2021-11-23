@@ -25,7 +25,7 @@ sleep 5
 for item in ${TARGET_WALLETS[*]}; do
 	echo -e ""
 	echo -e "Trying to send ${UUMEE_AMOUMT_TO_SEND}uumee from ${SOURCE_WALLET} to ${item}..."
-	echo -e "${WALLETS_PASSWORD}\n" | umeed tx bank send ${SOURCE_WALLET} ${item} ${UUMEE_AMOUMT_TO_SEND}uumee --chain-id "umeevengers-1c" --from "${2}" --gas ${GAS_AMOUNT} --fees ${FEES_AMOUNT}uumee -y
+	echo -e "${SOURCE_WALLET_PASSWORD}\n" | umeed tx bank send ${SOURCE_WALLET} ${item} ${UUMEE_AMOUMT_TO_SEND}uumee --chain-id "umeevengers-1c" --from "${2}" --gas ${GAS_AMOUNT} --fees ${FEES_AMOUNT}uumee -y
 	sleep 1
 done
 echo -e ""
