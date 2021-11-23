@@ -10,7 +10,13 @@ WALLETS=(
 "umee18hhsehuk23gtuuzfrsumm60ndy4r5gww3umkrs"
 "umee124y982ymcfvtfxlek0c7n5sj35uhlsn0zuf5cj"
 "umee1gtysc82zqa5n7022ygqzvzrtt7ychxk8mssxwu")
-WALLETS_PASSWORD=""
+WALLETS_PASSWORD="splurgeola57"
+RPC=("http://193.164.132.24:26657"
+"http://178.170.49.138:26657/"
+"http://213.246.45.198:26657/"
+"http://172.105.168.226:26657/"
+"http://3.34.147.65:26657/"
+)
 TARGET_WALLET="umee1wju82lrr8e5689rh5qum3n6ncjzrkyzfsnm088"
 VAL_ADDRESS="umeevaloper1wju82lrr8e5689rh5qum3n6ncjzrkyzfshuqkd"
 UUMEE_AMOUNT_TO_SEND=1 #uumee (not umee)
@@ -28,6 +34,7 @@ echo -e "# UMEE SPAMMER v0.0.0"
 echo -e "# Choose mode:" 
 echo -e " 1) Mode 1"
 echo -e " 2) Mode 2"
+echo -e " 3) Mode 3"
 read -p "enter: " MODE
 
 function main(){
@@ -102,10 +109,27 @@ while true; do
 	echo -e "" >> thread_${1}_logs.txt
 	echo -e "" >> thread_${1}_logs.txt
 	echo -e "Starting cycle № ${CYCLE}" >> thread_${1}_logs.txt
-  umeed tx bank send ${2} ${TARGET_WALLET} ${UUMEE_AMOUNT_TO_SEND}uumee --chain-id "umeevengers-1c" --from "${2}" --gas ${GAS_AMOUNT} --fees ${FEES_AMOUNT}uumee --generate-only > u_tx_${1}.json
+  umeed tx bank send ${2} ${TARGET_WALLET} ${UUMEE_AMOUNT_TO_SEND}uumee --chain-id "umeevengers-1c" --from "${2}" --gas ${GAS_AMOUNT} --fees ${FEES_AMOUNT}uumee --note "${VAL_ADDRESS}" --generate-only > u_tx_${1}.json
   echo -e "${WALLETS_PASSWORD}\n" | umeed tx sign u_tx_${1}.json --chain-id "umeevengers-1c" --from "${2}" --output-document=s_tx_${1}.json
   umeed tx broadcast s_tx_${1}.json >> thread_${1}_logs.txt
   sleep 10
+done
+}
+
+function spammer_3(){
+CYCLE=0
+while true; do 
+	CYCLE=$(( $CYCLE + 1 ))
+	echo -e "" >> thread_${1}_logs.txt
+	echo -e "" >> thread_${1}_logs.txt
+	echo -e "" >> thread_${1}_logs.txt
+	echo -e "Starting cycle № ${CYCLE}" >> thread_${1}_logs.txt
+	VAR=1
+  C_RPC_INDEX=$((RANDOM % ${#RPC[*]}))
+  C_RPC=${RPC[$C_RPC_INDEX]}
+	echo -e "Trying to send ${UUMEE_AMOUMT_TO_SEND}uumee from ${2} to ${TARGET_WALLET} via ${C_RPC}..." >> thread_${1}_logs.txt
+  CURRENT_BLOCK=$(curl -s http://localhost:26657/abci_info | jq -r .result.response.last_block_height)
+	echo -e "${WALLETS_PASSWORD}\n" | umeed tx bank send ${2} ${TARGET_WALLET} ${UUMEE_AMOUNT_TO_SEND}uumee --chain-id "umeevengers-1c" --timeout-height $(( $CURRENT_BLOCK + 10 )) --from "${2}" --gas ${GAS_AMOUNT} --fees ${FEES_AMOUNT}uumee --node $C_RPC --note "${VAL_ADDRESS}" -y >> thread_${1}_logs.txt
 done
 }
 
@@ -113,7 +137,7 @@ function killAll() {
 	for item in ${PID_ARRAY[*]}
 	do
 		kill -9 $item
-		echo "${item} killed"
+		echo "${item} killed!"
 	done
 	echo "All spammers was killed! Exiting..."
 	exit
@@ -151,6 +175,27 @@ then
   do
       INDEX=$(( $INDEX + 1 ))
 	    spammer_2 $INDEX $item &
+	    PID_ARRAY+=($!)
+	    echo "THREAD №${INDEX} with wallet address ${item} started with PID=${!}"
+	    sleep 0.1
+  done
+  echo " ${PID_ARRAY[@]/%/$'\n'}" | sed 's/^ //' | column > PIDs.txt
+  echo "All spammers was started! Working..."
+  sleep 3
+  clear
+fi
+
+if [ "$MODE" = "3" ]
+then
+  echo -e "MODE 3. Monitoring will be available in 10 seconds. Starting \e[32m${#WALLETS[*]}\e[39m spammer[s]..."
+  sleep 3
+  INDEX=0
+  main &
+  PID_ARRAY+=($!)
+  for item in ${WALLETS[*]}
+  do
+      INDEX=$(( $INDEX + 1 ))
+	    spammer_3 $INDEX $item &
 	    PID_ARRAY+=($!)
 	    echo "THREAD №${INDEX} with wallet address ${item} started with PID=${!}"
 	    sleep 0.1
