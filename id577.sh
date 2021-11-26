@@ -1206,7 +1206,7 @@ fi
 if [ "\$DAEMON" != "" ]
 then
 	case \$DAEMON in  
-		"iond" | "althea" | "evmosd" | "umeed") jailed=\$(\$(which \${DAEMON}) query staking validators --limit 10000 --output json | jq -r '.validators[] | select(.description.moniker=='\"\$moniker\"')' | jq -r '.jailed');;
+		"iond" | "althea" | "evmosd" | "umeed") jailed=\$($(which ${DAEMON}) query staking validators --limit 10000 --output json | jq -r '.validators[] | select(.description.moniker=='\"\$moniker\"')' | jq -r '.jailed');;
 		"stchaincli") jailed=\$(stchaincli query staking validator \$(stchaincli keys show \$moniker --bech val --address --keyring-backend test) --trust-node --node \$(cat "$HOME/.stchaind/config/config.toml" | grep -oPm1 "(?<=^laddr = \")([^%]+)(?=\")") | grep -Eo "jailed: (true|false)" | grep -Eo "(true|false)")
 	esac
 	if [ "\$jailed" = "" ] || [ "\$jailed" = "true" ]
