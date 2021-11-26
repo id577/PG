@@ -923,7 +923,7 @@ version=\$(echo \$temp | grep -Eo 'Version(:)* [0-9]*.[0-9]*.[0-9]*' | cut -d ' 
 
 temp=\$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./run accounts:balance $IRONFISH_WALLET)
 
-balance=\$(echo \$temp | sed 's/,//g' | grep -Eo '\\\$ORE [0-9]+' | grep -Eo -m 1 '[0-9]+')
+balance=\$(echo \$temp | sed -E 's/,| //g' | grep -Eo '\\\$ORE [0-9]+' | grep -Eo -m 1 '[0-9]+')
 if [ "\$balance" = "" ]
 then
 	balance=0
