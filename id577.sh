@@ -919,15 +919,16 @@ else
 	is_synced=0
 fi
 
-version=$(echo $temp | grep -Eo 'Version(:)* [0-9]*.[0-9]*.[0-9]*' | cut -d ' ' -f2)
+version=$(echo \$temp | grep -Eo 'Version(:)* [0-9]*.[0-9]*.[0-9]*' | cut -d ' ' -f2)
 
 temp=\$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./run accounts:balance $IRONFISH_WALLET)
 
-balance=\$(echo \$temp | sed 's/,//g' | grep -Eo 'is: \\\$IRON [0-9]+.' | grep -Eo '[0-9]+')
-if [ "\$balance" = "" ]
+balance=\$(echo \$temp | sed 's/,//g' | grep -Eo '\\\$ORE [0-9]+.' | grep -Eo -m 1 '[0-9]+')
+if [ "$balance" = "" ]
 then
 	balance=0
 fi
+balance=\$(( \$balance / 100000000 ))
 
 #LOGS
 echo -e "ironfish node info: version=\${version}"
