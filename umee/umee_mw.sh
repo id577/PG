@@ -1,24 +1,8 @@
 #!/bin/bash
-WALLETS=(
-"umee1fsh2n7429l2x022xdthf5w4l7jkaw8v43kqmq8"
-"umee1dml765pf85lcu5y8nmm2fnjwjs4xvvqsq8vagp"
-"umee1pfdd6cucne3lv9w8ks603mtukmd6t07a3zpmj2"
-"umee1xcejpf5m94wshyu2cet48vg9ku343n2g80r607"
-"umee1crht473nwg60v40upe6zj3n7tw24mgzy5y5flg"
-"umee1579s65q7j8n3suhyt8mqsahzmqz5ngwpe6jn6a"
-"umee13cktasn2dk29qwk2r7q9khv7p4p2exxmlyknwh"
-"umee18hhsehuk23gtuuzfrsumm60ndy4r5gww3umkrs"
-"umee124y982ymcfvtfxlek0c7n5sj35uhlsn0zuf5cj"
-"umee1gtysc82zqa5n7022ygqzvzrtt7ychxk8mssxwu")
-WALLETS_PASSWORD="splurgeola57"
-RPC=("http://193.164.132.24:26657"
-"http://178.170.49.138:26657/"
-"http://213.246.45.198:26657/"
-"http://172.105.168.226:26657/"
-"http://3.34.147.65:26657/"
-"http://95.111.231.65:26657/"
-)
-TARGET_WALLET="umee1wju82lrr8e5689rh5qum3n6ncjzrkyzfsnm088"
+WALLETS=()
+WALLETS_PASSWORD=""
+RPC=()
+TARGET_WALLET=""
 VAL_ADDRESS="umeevaloper1wju82lrr8e5689rh5qum3n6ncjzrkyzfshuqkd"
 UUMEE_AMOUNT_TO_SEND=1 #uumee (not umee)
 DELAY_TIME=10 #sec
