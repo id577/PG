@@ -930,7 +930,7 @@ then
 fi
 
 #LOGS
-echo -e "ironfish node info: version=${version}"
+echo -e "ironfish node info: version=\${version}"
 echo -e "Ironfish status report: node_status=\${status}, miner_status=\${miner_status}, peers=\${peers}, blocks=\${blocks_height}, mined_blocks=\${mined_blocks}, p2p_status=\${p2p_status}, balance=\${balance}, is_synced=\${is_synced}"
 
 if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
