@@ -919,15 +919,18 @@ else
 	is_synced=0
 fi
 
+version=$(echo $temp | grep -Eo 'Version(:)* [0-9]*.[0-9]*.[0-9]*' | cut -d ' ' -f2)
+
 temp=\$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./run accounts:balance $IRONFISH_WALLET)
 
-balance=\$(echo \$temp | grep -Eo 'is: \\\$IRON [0-9]+,' | grep -Eo '[0-9]+')
+balance=\$(echo \$temp | sed 's/,//g' | grep -Eo 'is: \\\$IRON [0-9]+.' | grep -Eo '[0-9]+')
 if [ "\$balance" = "" ]
 then
 	balance=0
 fi
 
 #LOGS
+echo -e "ironfish node info: version=${version}"
 echo -e "Ironfish status report: node_status=\${status}, miner_status=\${miner_status}, peers=\${peers}, blocks=\${blocks_height}, mined_blocks=\${mined_blocks}, p2p_status=\${p2p_status}, balance=\${balance}, is_synced=\${is_synced}"
 
 if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
@@ -1117,7 +1120,7 @@ read -n 1 -s -r -p "Press any key to continue..."
 
 ###################################################################################
 function installCosmosExporter {
-SUPPORTER_NODES="Althea, Evmos, Idep, Stratos, Umee"
+SUPPORTER_NODES="Althea, Evmos, Idep, Stratos, Umee, assetMantle"
 echo -e "The script supports only one cosmos node per instance. At least for now!"
 read -n 1 -s -r -p "Press any key to continue or CRTL+C for abort installation..."
 echo ""
@@ -1131,7 +1134,7 @@ then
 fi
 if [ ! $DAEMON ]
 then	
-	COSMOS_NODES=("evmosd" "iond" "althead" "stratosd" "umeed") 
+	COSMOS_NODES=("evmosd" "iond" "althead" "stratosd" "umeed" "assetd") 
 	for item in ${COSMOS_NODES[*]}
 	do
 	if [  -f "/etc/systemd/system/${item}.service" ]
@@ -1141,7 +1144,8 @@ then
 			case $DAEMON in    
 				"idepd") DAEMON="iond";;
 				"althead") DAEMON="althea";;
-				"stratosd") DAEMON="stchaincli"
+				"stratosd") DAEMON="stchaincli";;
+				"assetd") DAEMON="assetClient"
 			esac
 			break
 	fi
@@ -1207,7 +1211,8 @@ if [ "\$DAEMON" != "" ]
 then
 	case \$DAEMON in  
 		"iond" | "althea" | "evmosd" | "umeed") jailed=\$($(which ${DAEMON}) query staking validators --limit 10000 --output json | jq -r '.validators[] | select(.description.moniker=='\"\$moniker\"')' | jq -r '.jailed');;
-		"stchaincli") jailed=\$(stchaincli query staking validator \$(stchaincli keys show \$moniker --bech val --address --keyring-backend test) --trust-node --node \$(cat "$HOME/.stchaind/config/config.toml" | grep -oPm1 "(?<=^laddr = \")([^%]+)(?=\")") | grep -Eo "jailed: (true|false)" | grep -Eo "(true|false)")
+		"stchaincli") jailed=\$(stchaincli query staking validator \$(stchaincli keys show \$moniker --bech val --address --keyring-backend test) --trust-node --node \$(cat "$HOME/.stchaind/config/config.toml" | grep -oPm1 "(?<=^laddr = \")([^%]+)(?=\")") | grep -Eo "jailed: (true|false)" | grep -Eo "(true|false)");;
+		"assetClient") jailed=\$(\$(which assetClient) q staking validators --output json | jq -r '.[] | select(.description.moniker=="\$moniker")' | jq -r '.jailed')
 	esac
 	if [ "\$jailed" = "" ] || [ "\$jailed" = "true" ]
 	then
