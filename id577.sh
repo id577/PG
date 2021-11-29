@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #VARIABLES
-VERSION='0.2.84b'
+VERSION='0.2.85b'
 NODE_EXPORTER_VERSION='1.2.2'
 PROMETHEUS_VERSION='2.30.2'
 GRAFANA_VERSION='8.1.5'
@@ -526,8 +526,7 @@ then
 fi
 echo -e "Aleo_exporter installation starts..."
 sleep 3
-aleo_service_name=""
-aleo_miner_service_name=""
+
 CV=$(systemctl list-unit-files | grep "aleo_exporter.service")
 if [ "$CV" != "" ]
 then
@@ -536,117 +535,45 @@ then
 	rm -rf /usr/local/bin/aleo_exporter.sh
 	rm -rf /etc/systemd/system/aleo_exporter*
 fi
-CV=$(systemctl list-unit-files | grep "aleo.service")
-if [ "$CV" != "" ]
-then
-	echo -e "aleo.service founded!"
-	aleo_service_name="aleo.service"
-fi
-CV=$(systemctl list-unit-files | grep "aleod.service")
-if [ "$CV" != "" ]
-then
-	echo -e "aleod.service founded!"
-	aleo_service_name="aleod.service"
-fi
-CV=$(systemctl list-unit-files | grep "aleo-miner.service")
-if [ "$CV" != "" ]
-then
-	echo -e "aleo-miner.service founded!"
-	aleo_miner_service_name="aleo-miner.service"
-fi
-CV=$(systemctl list-unit-files | grep "aleod-miner.service")
-if [ "$CV" != "" ]
-then
-	echo -e "aleod-miner.service founded!"
-	aleo_miner_service_name="aleod-miner.service"
-fi
-if [ "$aleo_service_name" == "" ] && [ "$aleo_miner_service_name" == "" ]
-then
-	echo -e "No aleo service was founded. Are you sure that aleo is installed as a service?"
-	echo -e "You can mannualy change variables 'aleo_service_name' 'aleo_miner_service_name' in script file /usr/local/bin/aleo_exporter"
-	echo -e "if your aleo is not installed as a service, some metrics will not work!"
-	read -n 1 -s -r -p "Press any key to continue or ctrl+c to abort installion"
-fi
+
 source $HOME/.bash_profile
 
 sudo tee <<EOF1 >/dev/null /usr/local/bin/aleo_exporter.sh
 #!/bin/bash
 
 PUSHGATEWAY_ADDRESS=$PUSHGATEWAY_ADDRESS
-aleo_service_name="${aleo_service_name}"
-aleo_miner_service_name="${aleo_miner_service_name}"
 job="aleo"
+node="localhost:3032"
 metric_1='my_aleo_peers_count'
-metric_2='my_aleo_status'
-metric_3='my_aleo_blocks_count'
-metric_4='my_aleo_is_synced'
-metric_5='my_aleo_blocks_mined_count'
-metric_6='my_aleo_miner_status'
+metric_2='my_aleo_blocks_count'
 
 function getMetrics {
 
-peers_count=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getpeerinfo", "params": [] }' -H 'content-type: application/json' http://localhost:3030/ | grep -E -o "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)" | wc -l)
+peers_count=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getconnectedpeers", "params": [] }' -H 'content-type: application/json' http://\$node/ | jq '.result[]' | wc -l)
 if [ "\$peers_count" = "" ]
 then peers_count=0
 fi
 
-is_synced=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getnodeinfo", "params": [] }' -H 'content-type: application/json' http://localhost:3030 | grep -E -o "is_syncing\":[A-Za-z]*" | grep -E -o "(true|false)")
-if [ "\$is_synced" = "false" ]
-then is_synced=1
-else is_synced=0
-fi
-
-blocks_count=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getblockcount", "params": [] }' -H 'content-type: application/json' http://localhost:3030 | grep -E -o "result\":[0-9]*" | grep -E -o "[0-9]*")
+blocks_count=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "latestblockheight", "params": [] }' -H 'content-type: application/json' http://\$node/ | jq '.result')
 if [ "\$blocks_count" = "" ]
 then blocks_count=0
 fi
 
-if [ "\$aleo_service_name" != "" ] 
-then is_active=\$(systemctl is-active ${aleo_service_name})
-	if [ "\$is_active" = "active" ]
-	then is_active=1
-	else is_active=0
-	fi
-else is_active=0
-fi
-
-if [ "\$aleo_miner_service_name" != "" ] 
-then is_active_miner=\$(systemctl is-active ${aleo_miner_service_name})
-	if [ "\$is_active_miner" = "active" ]
-	then is_active_miner=1
-	else is_active_miner=0
-	fi
-else is_active_miner=0
-fi
-
-blocks_mined_count=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getnodestats", "params": [] }' -H 'content-type: application/json' http://localhost:3030 | grep -E -o "mined\":[0-9]*" | grep -E -o "[0-9]*")
-if [ "\$blocks_mined_count" = "" ]
-then blocks_mined_count=0
-fi
 
 #LOGS
-echo -e "Aleo status report: aleo_is_active=\${is_active}, aleo_miner_is_active=\${is_active_miner}, is_synced=\${is_synced}, peers_count=\${peers_count}, blocks_count=\${blocks_count}, blocks_mined_count=\${blocks_mined_count}"
+echo -e "Aleo status report: peers_count=\${peers_count}, blocks_count=\${blocks_count}, blocks_mined_count=n/a"
 
 if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
 then
 cat <<EOF | curl -s --data-binary @- \$PUSHGATEWAY_ADDRESS/metrics/job/\$job/instance/$IP_ADDRESS
 # TYPE my_aleo_peers_count gauge
 \$metric_1 \$peers_count
-# TYPE my_aleo_status gauge
-\$metric_2 \$is_active
 # TYPE my_aleo_blocks_count gauge
-\$metric_3 \$blocks_count
-# TYPE my_aleo_is_synced gauge
-\$metric_4 \$is_synced
-# TYPE my_aleo_blocks_mined_count gauge
-\$metric_5 \$blocks_mined_count
-# TYPE my_aleo_miner_status gauge
-\$metric_6 \$is_active_miner
+\$metric_2 \$blocks_count
 EOF
 echo -e "sended to pushgataway."
 fi
 }
-
 
 while true; do
 	getMetrics
