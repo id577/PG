@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #VARIABLES
-VERSION='0.2.85b'
+VERSION='0.2.86b'
 NODE_EXPORTER_VERSION='1.2.2'
 PROMETHEUS_VERSION='2.30.2'
 GRAFANA_VERSION='8.1.5'
@@ -549,6 +549,8 @@ metric_2='my_aleo_blocks_count'
 
 function getMetrics {
 
+status=
+
 peers_count=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getconnectedpeers", "params": [] }' -H 'content-type: application/json' http://\$node/ | jq '.result[]' | wc -l)
 if [ "\$peers_count" = "" ]
 then peers_count=0
@@ -559,9 +561,20 @@ if [ "\$blocks_count" = "" ]
 then blocks_count=0
 fi
 
+status=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getnodestate", "params": [] }' -H 'content-type: application/json' http://\$node/ | jq '.result' | grep -Eo "status\": \"[A-Za-z]*" | awk '{print \$2}' | grep -Eo "[A-Za-z]*")
+
+if [ "\$status" = "Syncing" ]; then
+	status=1
+elif [ "\$status" = "Peering" ]; then
+	status=2
+elif [ "\$status" = "Mining" ]; then
+	status=3
+else
+	status=0
+fi
 
 #LOGS
-echo -e "Aleo status report: peers_count=\${peers_count}, blocks_count=\${blocks_count}, blocks_mined_count=n/a"
+echo -e "Aleo status report: status=\${status}, peers_count=\${peers_count}, blocks_count=\${blocks_count}, blocks_mined_count=n/a"
 
 if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
 then
