@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #VARIABLES
-VERSION='0.2.87b'
+VERSION='0.2.88'
 NODE_EXPORTER_VERSION='1.2.2'
 PROMETHEUS_VERSION='2.30.2'
 GRAFANA_VERSION='8.1.5'
@@ -980,8 +980,8 @@ function getMetrics {
 temp=\$(curl -s 127.0.0.1:9002/status)
 
 lastblock=\$(echo \$temp | jq .response.chain.block)
-connections=\$(echo \$temp | jq .response.nerwork.connected)
-version=\$(echo \$temp | jq .response.version)
+connections=\$(echo \$temp | jq .response.network.connected)
+version=\$(echo \$temp | jq .response.version | sed 's/"//g') 
 total_devices=\$(echo \$temp | jq .response.devices)
 status=\$(echo \$temp | jq .status)
 
