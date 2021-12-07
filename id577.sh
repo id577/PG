@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #VARIABLES
-VERSION='0.2.86b'
+VERSION='0.2.87b'
 NODE_EXPORTER_VERSION='1.2.2'
 PROMETHEUS_VERSION='2.30.2'
 GRAFANA_VERSION='8.1.5'
@@ -977,29 +977,25 @@ metric_3='my_minima_connections'
 
 function getMetrics {
 
-temp=\$(curl -s 127.0.0.1:9002/status | jq)
+temp=\$(curl -s 127.0.0.1:9002/status)
 
-status=\$(echo \$temp | grep -Eo 'status\": [a-z]*' | grep -Eo '(true|false)')
-if [ "\$status" = "true" ]
-then
-	status=1
-else
-	status=0
-fi
+lastblock=\$(echo \$temp | jq .response.chain.block)
+connections=\$(echo \$temp | jq .response.nerwork.connected)
+version=\$(echo \$temp | jq .response.version)
+total_devices=\$(echo \$temp | jq .response.devices)
+status=\$(echo \$temp | jq .status)
 
-lastblock=\$(echo \$temp | grep -Eo 'lastblock\": \"[0-9]*' | grep -Eo '[0-9]*')
 if [ "\$lastblock" = "" ]
-then
-	lastblock=0
-fi
-
-connections=\$(echo \$temp | grep -Eo 'connections\": [0-9]*' | grep -Eo '[0-9]+')
-if [ "\$connections" = "" ]
-then
-	connections=0
+then lastblock=0
+elif [ "\$connections" = "" ]
+then connections=0
+elif [ "\$status" = "true" ]
+then status=1
+else status=0
 fi
 
 #LOGS
+echo -e "minima node info: version=\${version}, total_devices=\${total_devices}"
 echo -e "minima status report: status=\${status}, lastblock=\${lastblock}, connections=\${connections}"
 
 if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
