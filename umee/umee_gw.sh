@@ -33,6 +33,7 @@ function monitoring(){
 	clear
 	UMEE_BALANCE=$(umeed q bank balances $UMEE_WALLET | grep -Eo "amount: \"[0-9]+" | grep -Eo [0-9]+)
 	ETH_BALANCE=$(curl -s -X POST -d "module=account&action=balance&address=${ETH_WALLET}&tag=latest&apikey=${API}" https://api-goerli.etherscan.io/api | grep -Eo "result\":\"[0-9]+" | grep -Eo [0-9]+)
+	ETH_BALANCE=$(bc<<<"scale=6;$ETH_BALANCE/1000000000000000000")
 	UMEE_AT_ETH_BALANCE=$(curl -s -X POST -d "module=account&action=tokenbalance&contractaddress=${CONTRACT_ADDRESS}&address=${ETH_WALLET}&tag=latest&apikey=${API}" https://api-goerli.etherscan.io/api | grep -Eo "result\":\"[0-9]+" | grep -Eo [0-9]+)
 	echo -e "------------ UMEE-GW MONITOR (MODE ${MODE})------------"
 	echo -e ""
