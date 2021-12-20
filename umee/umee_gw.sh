@@ -1,12 +1,12 @@
 #!/bin/bash
-UMEE_WALLET="umee1m7yj6x2qu0efm977kpud2xjstxk0cxpednqdmp"
+UMEE_WALLET=""
 UMEE_WALLET_PASSWORD=""
 ETH_WALLET=""
 ETH_PK=""
 ETH_RPC=""
-CONTRACT_ADDRESS=""
-FEES=
-FEES_BRIDGE=
+CONTRACT_ADDRESS="0xF20f98d098531Ba0Fdd6652C97f3da448C4E3962"
+FEES=200
+FEES_BRIDGE=1
 DELAY_TIME=60 #sec, delay between transactions
 CYCLE_SHIFT=10 #how many cycles will be skipped before the script starts sending transactions from ETH to COSMOS
 UUMEE_AMOUNT_TO_SEND=1 #uumee (not umee)
@@ -18,6 +18,8 @@ echo -e " 1) MODE 1 (send ONLY to ETH network)"
 echo -e " 2) MODE 2 (send ONLY to COSMOS network)"
 echo -e " 3) MODE 3 (send to ETH and COSMOS networks)"
 read -p "Choose MODE: " MODE
+TX_TO_ETH=0
+TX_TO_COSMOS=0
 if [ "$MODE" = "1" ] || [ "$MODE" = "3" ]; then
 	read -p "How many transactions need to be sent to ETH network: " TX_TO_ETH
 	TX_COUNT_MESSAGE="TXs to ETH network: ${TX_TO_ETH};"
@@ -57,7 +59,7 @@ function monitoring(){
 
 function send_to_eth(){
   echo -e "" >> TXs_TO_ETH_LOG.txt
-	echo -e "${UMEE_WALLET_PASSWORD}\n" | umeed tx peggy send-to-eth $ETH_WALLET ${UUMEE_AMOUMT_TO_SEND}uumee ${FEES_BRIDGE}uumee --from ${UMEE_WALLET} --chain-id=umee-alpha-mainnet-2 --keyring-backend=os --fees=${FEES}uumee &>> TXs_TO_ETH_LOG.txt
+	echo -e "${UMEE_WALLET_PASSWORD}\n" | umeed tx peggy send-to-eth $ETH_WALLET ${UUMEE_AMOUNT_TO_SEND}uumee ${FEES_BRIDGE}uumee --from ${UMEE_WALLET} --chain-id=umee-alpha-mainnet-2 --keyring-backend=os --fees=${FEES}uumee -y &>> TXs_TO_ETH_LOG.txt
 	if [ "$?" = "0" ]; then
 		SS_TX_TO_ETH=$(($SS_TX_TO_ETH+1))
 	else
@@ -67,7 +69,7 @@ function send_to_eth(){
 
 function send_to_cosmos(){
   echo -e "" >> TXs_TO_COSMOS_LOG.txt
-	peggo bridge send-to-cosmos $CONTRACT_ADDRESS $UMEE_WALLET $UUMEE_AMOUMT_TO_SEND --eth-pk $ETH_PK --eth-rpc "${ETH_RPC}" &>> TXs_TO_COSMOS_LOG.txt
+	peggo bridge send-to-cosmos $CONTRACT_ADDRESS $UMEE_WALLET $UUMEE_AMOUNT_TO_SEND --eth-pk $ETH_PK --eth-rpc "${ETH_RPC}" -y &>> TXs_TO_COSMOS_LOG.txt
 	if [ "$?" = "0" ]; then
 		SS_TX_TO_COSMOS=$(($SS_TX_TO_COSMOS+1))
 	else
@@ -98,5 +100,11 @@ if [ "$MODE" = "2" ] || [ "$MODE" = "3" ]; then
 	fi
 fi
 monitoring
+if [ "$SS_TX_TO_COSMOS" = "$TX_TO_COSMOS" ] && [ "$SS_TX_TO_ETH" = "$TX_TO_ETH" ]; then
+  echo ""
+  echo "Done!"
+  break
+fi
 sleep $DELAY_TIME
 done
+
