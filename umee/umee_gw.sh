@@ -3,14 +3,13 @@ UMEE_WALLET=""
 UMEE_WALLET_PASSWORD=""
 ETH_WALLET=""
 ETH_PK=""
-ETH_RPC=""
-CONTRACT_ADDRESS="0xF20f98d098531Ba0Fdd6652C97f3da448C4E3962"
+ETH_RPC="http://localhost:8545"
+CONTRACT_ADDRESS="0xe54fbaecc50731afe54924c40dfd1274f718fe02"
+UUMEE_AMOUNT_TO_SEND=1 #uumee (not umee)
 FEES=200
 FEES_BRIDGE=1
 DELAY_TIME=60 #sec, delay between transactions
-CYCLE_SHIFT=10 #how many cycles will be skipped before the script starts sending transactions from ETH to COSMOS
-UUMEE_AMOUNT_TO_SEND=1 #uumee (not umee)
-
+CYCLE_SHIFT=0 #how many cycles will be skipped before the script starts sending transactions from ETH to COSMOS
 
 echo -e "# UMEE GW v0.0.0"
 echo -e "# Choose mode:" 
@@ -28,14 +27,11 @@ if [ "$MODE" = "2" ] || [ "$MODE" = "3" ]; then
 	read -p "How many transactions need to be sent to COSMOS network: " TX_TO_COSMOS
 	TX_COUNT_MESSAGE="${TX_COUNT_MESSAGE}TXs to COSMOS network: ${TX_TO_COSMOS};"
 fi
-echo -e "You choose MODE ${MODE}"
-echo -e $TX_COUNT_MESSAGE
-sleep 3
-
+sleep 1
 function monitoring(){
 	clear
 	UMEE_BALANCE=$(umeed q bank balances $UMEE_WALLET | grep -Eo "amount: \"[0-9]+" | grep -Eo [0-9]+)
-	echo -e "------------ UMEE-GW MONITOR ------------"
+	echo -e "------------ UMEE-GW MONITOR (MODE ${MODE})------------"
   echo -e ""
 	echo -e "UMEE_WALLET: \e[32m${UMEE_BALANCE}\e[39m uumee"
 	echo -e "ETH_WALLET: \e[32mn/a\e[39m eth; \e[32mn/a\e[39m uumee"
@@ -52,7 +48,7 @@ function monitoring(){
 		echo -e "SUCCESSFUL TX_TO_COSMOS = ${SS_TX_TO_COSMOS}/${TX_TO_COSMOS}"
 		echo -e "ERRORS: \e[31m${ERR_TX_TO_COSMOS}\e[39m"
 	fi
-	echo -e "----------------------------------------"
+	echo -e "--------------------------------------------------"
   echo -e ""
   echo -e "press ctrl+c to abort..."
 }
@@ -69,7 +65,7 @@ function send_to_eth(){
 
 function send_to_cosmos(){
   echo -e "" >> TXs_TO_COSMOS_LOG.txt
-	peggo bridge send-to-cosmos $CONTRACT_ADDRESS $UMEE_WALLET $UUMEE_AMOUNT_TO_SEND --eth-pk $ETH_PK --eth-rpc "${ETH_RPC}" -y &>> TXs_TO_COSMOS_LOG.txt
+	peggo bridge send-to-cosmos $CONTRACT_ADDRESS $UMEE_WALLET $UUMEE_AMOUNT_TO_SEND --eth-pk $ETH_PK --eth-rpc "${ETH_RPC}" &>> TXs_TO_COSMOS_LOG.txt
 	if [ "$?" = "0" ]; then
 		SS_TX_TO_COSMOS=$(($SS_TX_TO_COSMOS+1))
 	else
@@ -87,9 +83,9 @@ if [ "$MODE" = "1" ] || [ "$MODE" = "3" ]; then
 	if [ $SS_TX_TO_ETH -lt $TX_TO_ETH ]; then
 		send_to_eth
 	fi
+  monitoring
+  sleep $DELAY_TIME
 fi
-monitoring
-sleep $DELAY_TIME
 if [ "$MODE" = "2" ] || [ "$MODE" = "3" ]; then
 	if [ $SS_TX_TO_COSMOS -lt $TX_TO_COSMOS ]; then
     if [ $CYCLE_SHIFT -gt 0 ] && [ "$MODE" = "3" ]; then
@@ -98,13 +94,13 @@ if [ "$MODE" = "2" ] || [ "$MODE" = "3" ]; then
       send_to_cosmos
     fi
 	fi
+  monitoring
+  sleep $DELAY_TIME
 fi
-monitoring
 if [ "$SS_TX_TO_COSMOS" = "$TX_TO_COSMOS" ] && [ "$SS_TX_TO_ETH" = "$TX_TO_ETH" ]; then
   echo ""
   echo "Done!"
   break
 fi
-sleep $DELAY_TIME
 done
 
