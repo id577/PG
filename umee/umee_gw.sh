@@ -10,6 +10,7 @@ FEES=200
 FEES_BRIDGE=1
 DELAY_TIME=60 #sec, delay between transactions
 CYCLE_SHIFT=0 #how many cycles will be skipped before the script starts sending transactions from ETH to COSMOS
+API="1ZD4C1DWAI7AVZ73DNCGUUGFIV3RDPSKCG"
 
 echo -e "# UMEE GW v0.0.0"
 echo -e "# Choose mode:" 
@@ -31,10 +32,12 @@ sleep 1
 function monitoring(){
 	clear
 	UMEE_BALANCE=$(umeed q bank balances $UMEE_WALLET | grep -Eo "amount: \"[0-9]+" | grep -Eo [0-9]+)
+	ETH_BALANCE=$(curl -s -X POST -d "module=account&action=balance&address=${ETH_WALLET}&tag=latest&apikey=${API}" https://api-goerli.etherscan.io/api | grep -Eo "result\":\"[0-9]+" | grep -Eo [0-9]+)
+	UMEE_AT_ETH_BALANCE=$(curl -s -X POST -d "module=account&action=tokenbalance&contractaddress=${CONTRACT_ADDRESS}&address=${ETH_WALLET}&tag=latest&apikey=${API}" https://api-goerli.etherscan.io/api | grep -Eo "result\":\"[0-9]+" | grep -Eo [0-9]+)
 	echo -e "------------ UMEE-GW MONITOR (MODE ${MODE})------------"
-  echo -e ""
-	echo -e "UMEE_WALLET: \e[32m${UMEE_BALANCE}\e[39m uumee"
-	echo -e "ETH_WALLET: \e[32mn/a\e[39m eth; \e[32mn/a\e[39m uumee"
+	echo -e ""
+	echo -e "UMEE_WALLET: \e[32m${UMEE_BALANCE}\e[39muumee"
+	echo -e "ETH_WALLET: \e[32m${ETH_BALANCE}\e[39meth \e[32m${UMEE_AT_ETH_BALANCE}\e[39muumee"
 	if [ "$MODE" = "1" ] || [ "$MODE" = "3" ]; then
     echo -e ""
 		echo -e "SUCCESSFUL TX_TO_ETH: ${SS_TX_TO_ETH}/${TX_TO_ETH}"
@@ -50,7 +53,7 @@ function monitoring(){
 	fi
 	echo -e "--------------------------------------------------"
   echo -e ""
-  echo -e "press ctrl+c to abort..."
+  echo -e "Press ctrl+c to abort..."
 }
 
 function send_to_eth(){
@@ -88,16 +91,18 @@ if [ "$MODE" = "1" ] || [ "$MODE" = "3" ]; then
 fi
 if [ "$MODE" = "2" ] || [ "$MODE" = "3" ]; then
 	if [ $SS_TX_TO_COSMOS -lt $TX_TO_COSMOS ]; then
-    if [ $CYCLE_SHIFT -gt 0 ] && [ "$MODE" = "3" ]; then
-      CYCLE_SHIFT=$(($CYCLE_SHIFT-1))
-    else
-      send_to_cosmos
-    fi
+		if [ $CYCLE_SHIFT -gt 0 ] && [ "$MODE" = "3" ]; then
+			CYCLE_SHIFT=$(($CYCLE_SHIFT-1))
+		else
+			send_to_cosmos
+		fi
 	fi
   monitoring
   sleep $DELAY_TIME
 fi
 if [ "$SS_TX_TO_COSMOS" = "$TX_TO_COSMOS" ] && [ "$SS_TX_TO_ETH" = "$TX_TO_ETH" ]; then
+  cat TXs_TO_COSMOS_LOG.txt | jq .txhash >> TX_TO_COSMOS_HASHs.txt
+  cat TXs_TO_ETH_LOG.txt | jq .txhash >> TX_TO_ETH_HASHs.txt
   echo ""
   echo "Done!"
   break
