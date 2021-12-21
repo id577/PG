@@ -102,7 +102,7 @@ if [ "$MODE" = "2" ] || [ "$MODE" = "3" ]; then
   sleep $DELAY_TIME
 fi
 if [ "$SS_TX_TO_COSMOS" = "$TX_TO_COSMOS" ] && [ "$SS_TX_TO_ETH" = "$TX_TO_ETH" ]; then
-  cat TXs_TO_COSMOS_LOG.txt | jq .txhash >> TX_TO_COSMOS_HASHs.txt
+  cat TXs_TO_COSMOS_LOG.txt | grep -Eo "Transaction: [A-Za-z0-9]+" | awk '{print $2}' >> TX_TO_COSMOS_HASHs.txt
   cat TXs_TO_ETH_LOG.txt | jq .txhash >> TX_TO_ETH_HASHs.txt
   echo ""
   echo "Done!"
