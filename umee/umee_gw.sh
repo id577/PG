@@ -20,6 +20,7 @@ echo -e " 3) MODE 3 (send to ETH and COSMOS networks)"
 read -p "Choose MODE: " MODE
 TX_TO_ETH=0
 TX_TO_COSMOS=0
+TIMESTAMP=$(date +%s)
 if [ "$MODE" = "1" ] || [ "$MODE" = "3" ]; then
 	read -p "How many transactions need to be sent to ETH network: " TX_TO_ETH
 	TX_COUNT_MESSAGE="TXs to ETH network: ${TX_TO_ETH};"
@@ -58,8 +59,8 @@ function monitoring(){
 }
 
 function send_to_eth(){
-  echo -e "" >> TXs_TO_ETH_LOG.txt
-	echo -e "${UMEE_WALLET_PASSWORD}\n" | umeed tx peggy send-to-eth $ETH_WALLET ${UUMEE_AMOUNT_TO_SEND}uumee ${FEES_BRIDGE}uumee --from ${UMEE_WALLET} --chain-id=umee-alpha-mainnet-2 --keyring-backend=os --fees=${FEES}uumee -y &>> TXs_TO_ETH_LOG.txt
+  echo -e "" >> ${TIMESTAMP}_TXs_TO_ETH_LOG.txt
+	echo -e "${UMEE_WALLET_PASSWORD}\n" | umeed tx peggy send-to-eth $ETH_WALLET ${UUMEE_AMOUNT_TO_SEND}uumee ${FEES_BRIDGE}uumee --from ${UMEE_WALLET} --chain-id=umee-alpha-mainnet-2 --keyring-backend=os --fees=${FEES}uumee --broadcast-mode block -y &>> ${TIMESTAMP}_TXs_TO_ETH_LOG.txt
 	if [ "$?" = "0" ]; then
 		SS_TX_TO_ETH=$(($SS_TX_TO_ETH+1))
 	else
@@ -68,12 +69,36 @@ function send_to_eth(){
 }
 
 function send_to_cosmos(){
-  echo -e "" >> TXs_TO_COSMOS_LOG.txt
-	peggo bridge send-to-cosmos $CONTRACT_ADDRESS $UMEE_WALLET $UUMEE_AMOUNT_TO_SEND --eth-pk $ETH_PK --eth-rpc "${ETH_RPC}" &>> TXs_TO_COSMOS_LOG.txt
+  echo -e "" >> ${TIMESTAMP}_TXs_TO_COSMOS_LOG.txt
+	peggo bridge send-to-cosmos $CONTRACT_ADDRESS $UMEE_WALLET $UUMEE_AMOUNT_TO_SEND --eth-pk $ETH_PK --eth-rpc "${ETH_RPC}" &>> ${TIMESTAMP}_TXs_TO_COSMOS_LOG.txt
 	if [ "$?" = "0" ]; then
 		SS_TX_TO_COSMOS=$(($SS_TX_TO_COSMOS+1))
 	else
 		ERR_TX_TO_COSMOS=$(($ERR_TX_TO_COSMOS+1))
+	fi
+}
+
+function delay_or_exit() {
+	if [ "$SS_TX_TO_COSMOS" = "$TX_TO_COSMOS" ] && [ "$SS_TX_TO_ETH" = "$TX_TO_ETH" ] ; then
+		if [ "$TX_TO_ETH" != "0" ]; then
+			if [ "$MODE" = "1" ] || [ "$MODE" = "3" ]; then
+				echo "----COSMOS HASHs:----" >> ${TIMESTAMP}_TX_TO_ETH_HASHs.txt
+				cat TXs_TO_ETH_LOG.txt | jq .txhash | sed 's/"//g' >> ${TIMESTAMP}_TX_TO_ETH_HASHs.txt
+				echo "" >> ${TIMESTAMP}_TX_TO_ETH_HASHs.txt
+				echo "----ETH HASHs:----" >> ${TIMESTAMP}_TX_TO_ETH_HASHs.txt
+				curl -s -X POST -d "module=account&action=tokentx&address=${ETH_WALLET}&startblock=0&endblock=999999999&sort=asc&apikey=${API}" https://api-goerli.etherscan.io/api | jq -r ".result[] | select(.to==\"$ETH_WALLET\") | .hash" >> ${TIMESTAMP}_TX_TO_ETH_HASHs.txt
+			fi
+		fi
+		if [ "$MODE" = "2" ] || [ "$MODE" = "3" ]; then
+			if [ "$TX_TO_COSMOS" != "0" ]; then
+				cat TXs_TO_COSMOS_LOG.txt | grep -Eo "Transaction: [A-Za-z0-9]+" | awk '{print $2}' >> ${TIMESTAMP}_TX_TO_COSMOS_HASHs.txt
+			fi
+		fi
+		echo ""
+		echo "Done!"
+		exit
+	else 
+		sleep $DELAY_TIME
 	fi
 }
 
@@ -88,7 +113,7 @@ if [ "$MODE" = "1" ] || [ "$MODE" = "3" ]; then
 		send_to_eth
 	fi
   monitoring
-  sleep $DELAY_TIME
+  delay_or_exit
 fi
 if [ "$MODE" = "2" ] || [ "$MODE" = "3" ]; then
 	if [ $SS_TX_TO_COSMOS -lt $TX_TO_COSMOS ]; then
@@ -99,14 +124,7 @@ if [ "$MODE" = "2" ] || [ "$MODE" = "3" ]; then
 		fi
 	fi
   monitoring
-  sleep $DELAY_TIME
-fi
-if [ "$SS_TX_TO_COSMOS" = "$TX_TO_COSMOS" ] && [ "$SS_TX_TO_ETH" = "$TX_TO_ETH" ]; then
-  cat TXs_TO_COSMOS_LOG.txt | grep -Eo "Transaction: [A-Za-z0-9]+" | awk '{print $2}' >> TX_TO_COSMOS_HASHs.txt
-  cat TXs_TO_ETH_LOG.txt | jq .txhash >> TX_TO_ETH_HASHs.txt
-  echo ""
-  echo "Done!"
-  break
+  delay_or_exit
 fi
 done
 
