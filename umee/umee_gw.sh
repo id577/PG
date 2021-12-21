@@ -83,7 +83,7 @@ function delay_or_exit() {
 		if [ "$TX_TO_ETH" != "0" ]; then
 			if [ "$MODE" = "1" ] || [ "$MODE" = "3" ]; then
 				echo "----COSMOS HASHs:----" >> ${TIMESTAMP}_TX_TO_ETH_HASHs.txt
-				cat TXs_TO_ETH_LOG.txt | jq .txhash | sed 's/"//g' >> ${TIMESTAMP}_TX_TO_ETH_HASHs.txt
+				cat ${TIMESTAMP}_TXs_TO_ETH_LOG.txt | jq .txhash | sed 's/"//g' >> ${TIMESTAMP}_TX_TO_ETH_HASHs.txt
 				echo "" >> ${TIMESTAMP}_TX_TO_ETH_HASHs.txt
 				echo "----ETH HASHs:----" >> ${TIMESTAMP}_TX_TO_ETH_HASHs.txt
 				curl -s -X POST -d "module=account&action=tokentx&address=${ETH_WALLET}&startblock=0&endblock=999999999&sort=asc&apikey=${API}" https://api-goerli.etherscan.io/api | jq -r ".result[] | select(.to==\"$ETH_WALLET\") | .hash" >> ${TIMESTAMP}_TX_TO_ETH_HASHs.txt
@@ -91,7 +91,7 @@ function delay_or_exit() {
 		fi
 		if [ "$MODE" = "2" ] || [ "$MODE" = "3" ]; then
 			if [ "$TX_TO_COSMOS" != "0" ]; then
-				cat TXs_TO_COSMOS_LOG.txt | grep -Eo "Transaction: [A-Za-z0-9]+" | awk '{print $2}' >> ${TIMESTAMP}_TX_TO_COSMOS_HASHs.txt
+				cat ${TIMESTAMP}_TXs_TO_COSMOS_LOG.txt | grep -Eo "Transaction: [A-Za-z0-9]+" | awk '{print $2}' >> ${TIMESTAMP}_TX_TO_COSMOS_HASHs.txt
 			fi
 		fi
 		echo ""
