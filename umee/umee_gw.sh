@@ -108,7 +108,7 @@ function exitd() {
 				echo -e "COSMOS -> ETH:" >> {TIMESTAMP}_FULL_RESULT.txt
 				IFS=' ' read -r -a HEIGHT_ARRAY <<< $(echo -e $(cat ${TIMESTAMP}_TXs_TO_ETH_LOG.txt | jq '.height'| sed 's/"//g') | sed 's/\n/ /g')
 				IFS=' ' read -r -a HASH_ARRAY <<< $(echo -e $(cat ${TIMESTAMP}_TXs_TO_ETH_LOG.txt | jq '.txhash'| sed 's/"//g') | sed 's/\n/ /g')
-				IFS=' ' read -r -a AMOUNT_ARRAY <<< $(cat ${TIMESTAMP}_TXs_TO_ETH_LOG.txt | jq '.logs[].events[] | select(.type=="transfer")' | jq '.attributes[] | select(.key=="amount")' | jq .value | sed 's/"//g')
+				IFS=' ' read -r -a AMOUNT_ARRAY <<< $(echo -e $(cat ${TIMESTAMP}_TXs_TO_ETH_LOG.txt | jq '.logs[].events[] | select(.type=="transfer")' | jq '.attributes[] | select(.key=="amount")' | jq .value | sed 's/"//g') | sed 's/\n/ /g')
 				for (( n=0; n<$SS_TX_TO_ETH; n++ )); do
 					echo -e "${HEIGHT_ARRAY[n]} ${HASH_ARRAY[n]} ${AMOUNT_ARRAY[n]}" >> {TIMESTAMP}_FULL_RESULT.txt
 				done 
@@ -122,7 +122,7 @@ function exitd() {
 				IFS=' ' read -r -a AMOUNT_ARRAY <<< $(echo -e $(cat ${TIMESTAMP}_TXs_TO_COSMOS_LOG.txt | grep -Eo "Amount: [0-9]+" | awk '{print $2}') | sed 's/\n/ /g')
 				IFS=' ' read -r -a HASH_ARRAY <<< $(echo -e $(cat ${TIMESTAMP}_TXs_TO_COSMOS_LOG.txt | grep -Eo "Transaction: [A-Za-z0-9]+" | awk '{print $2}') | sed 's/\n/ /g')
 				for (( n=0; n<$SS_TX_TO_COSMOS; n++ )); do
-					echo -e "${HASH_ARRAY[n]} ${AMOUNT_ARRAY[n]}" >> {TIMESTAMP}_FULL_RESULT.txt
+					echo -e "${HASH_ARRAY[n]} ${AMOUNT_ARRAY[n]}" >> ${TIMESTAMP}_FULL_RESULT.txt
 				done 
 			fi
 		fi
