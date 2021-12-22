@@ -101,16 +101,29 @@ function exitd() {
 	if [ "$SS_TX_TO_COSMOS" = "$TX_TO_COSMOS" ] && [ "$SS_TX_TO_ETH" = "$TX_TO_ETH" ] ; then
 		if [ "$TX_TO_ETH" != "0" ]; then
 			if [ "$MODE" = "1" ] || [ "$MODE" = "3" ]; then
-				echo "----COSMOS HASHs:----" >> ${TIMESTAMP}_TX_TO_ETH_HASHs.txt
 				cat ${TIMESTAMP}_TXs_TO_ETH_LOG.txt | jq .txhash | sed 's/"//g' >> ${TIMESTAMP}_TX_TO_ETH_HASHs.txt
-				echo "" >> ${TIMESTAMP}_TX_TO_ETH_HASHs.txt
-				echo "----ETH HASHs:----" >> ${TIMESTAMP}_TX_TO_ETH_HASHs.txt
-				curl -s -X POST -d "module=account&action=tokentx&address=${ETH_WALLET}&startblock=0&endblock=999999999&sort=asc&apikey=${API}" https://api-goerli.etherscan.io/api | jq -r ".result[] | select(.to==\"$ETH_WALLET\") | .hash" >> ${TIMESTAMP}_TX_TO_ETH_HASHs.txt
+
+				#curl -s -X POST -d "module=account&action=tokentx&address=${ETH_WALLET}&startblock=0&endblock=999999999&sort=asc&apikey=${API}" https://api-goerli.etherscan.io/api | jq -r ".result[] | select(.to==\"$ETH_WALLET\") | .hash" >> ${TIMESTAMP}_TX_TO_ETH_HASHs.txt
+				
+				echo -e "COSMOS -> ETH:"
+				IFS=' ' read -r -a HEIGHT_ARRAY <<< $(echo -e $(cat ${TIMESTAMP}_TXs_TO_ETH_LOG.txt | jq '.height'| sed 's/"//g') | sed 's/\n/ /g')
+				IFS=' ' read -r -a HASH_ARRAY <<< $(echo -e $$(cat ${TIMESTAMP}_TXs_TO_ETH_LOG.txt | jq '.txhash'| sed 's/"//g') | sed 's/\n/ /g')
+				IFS=' ' read -r -a AMOUNT_ARRAY <<< $(cat ${TIMESTAMP}_TXs_TO_ETH_LOG.txt | jq '.logs[].events[] | select(.type=="transfer")' | jq '.attributes[] | select(.key=="amount")' | jq .value | sed 's/"//g')
+				for (( n=0; n<$SS_TX_TO_ETH; n++ )); do
+					echo -e "${HEIGHT_ARRAY[n]} ${HASH_ARRAY[n]} ${AMOUNT_ARRAY[n]}" >> {TIMESTAMP}_FULL_RESULT.txt
+				done 
 			fi
 		fi
 		if [ "$MODE" = "2" ] || [ "$MODE" = "3" ]; then
 			if [ "$TX_TO_COSMOS" != "0" ]; then
 				cat ${TIMESTAMP}_TXs_TO_COSMOS_LOG.txt | grep -Eo "Transaction: [A-Za-z0-9]+" | awk '{print $2}' >> ${TIMESTAMP}_TX_TO_COSMOS_HASHs.txt
+	
+				echo -e "ETH -> COSMOS:"
+				IFS=' ' read -r -a AMOUNT_ARRAY <<< $(echo -e $(cat ${TIMESTAMP}_TXs_TO_COSMOS_LOG.txt | grep -Eo "Amount: [0-9]+" | awk '{print $2}') | sed 's/\n/ /g')
+				IFS=' ' read -r -a HASH_ARRAY <<< $(echo -e $(cat ${TIMESTAMP}_TXs_TO_COSMOS_LOG.txt | grep -Eo "Transaction: [A-Za-z0-9]+" | awk '{print $2}') | sed 's/\n/ /g')
+				for (( n=0; n<$SS_TX_TO_COSMOS; n++ )); do
+					echo -e "${HASH_ARRAY[n]} ${AMOUNT_ARRAY[n]}" >> {TIMESTAMP}_FULL_RESULT.txt
+				done 
 			fi
 		fi
 		echo ""
