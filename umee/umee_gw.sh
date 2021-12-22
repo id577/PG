@@ -142,9 +142,9 @@ while true; do
 if [ "$MODE" = "1" ] || [ "$MODE" = "3" ]; then
 	if [ $SS_TX_TO_ETH -lt $TX_TO_ETH ]; then
 		send_to_eth
+		monitoring
 		sleep $DELAY_TIME
 	fi
-	monitoring
 	exitd
 fi
 if [ "$MODE" = "2" ] || [ "$MODE" = "3" ]; then
@@ -153,10 +153,10 @@ if [ "$MODE" = "2" ] || [ "$MODE" = "3" ]; then
 			CYCLE_SHIFT=$(($CYCLE_SHIFT-1))
 		else
 			send_to_cosmos
+			monitoring
 			sleep $DELAY_TIME
 		fi
 	fi
-	monitoring
 	exitd
 fi
 done
