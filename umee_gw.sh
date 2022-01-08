@@ -13,8 +13,11 @@ UMEE_PRICE=1.4
 
 ORC_START_BALANCE=$(curl -s -X POST -d "module=account&action=balance&address=${ORC_WALLET}&tag=latest&apikey=${API}" https://api-goerli.etherscan.io/api | grep -Eo "result\":\"[0-9]+" | grep -Eo [0-9]+)
 ORC_START_BALANCE=$(bc<<<"scale=6;$ORC_START_BALANCE/1000000000000000000")
-
 ORC_UMEE_START_BALANCE=$(curl -s -X POST -d "module=account&action=tokenbalance&contractaddress=${CONTRACT_ADDRESS}&address=${ORC_WALLET}&tag=latest&apikey=${API}" https://api-goerli.etherscan.io/api | grep -Eo "result\":\"[0-9]+" | grep -Eo [0-9]+)
+ORC_UMEE_START_BALANCE=$(bc<<<"scale=6;$ORC_UMEE_START_BALANCE/1000000")
+
+#ORC_START_BALANCE=1.429987
+#ORC_UMEE_START_BALANCE=33.869722
 
 echo -e "# UMEE GW v0.0.0"
 echo -e "# Choose mode:" 
@@ -71,13 +74,13 @@ function monitoring(){
 	echo -e "SETTINGS: MODE: ${MODE}; DT: ${DELAY_TIME}; CS: ${CYCLE_SHIFT}"
 	echo -e ""
   echo -e "WALLETS STATS:"
-	echo -e "umee wallet: \e[32m${UMEE_BALANCE}\e[39muumee"
-	echo -e "ethereum wallet: \e[32m${ETH_BALANCE}\e[39meth \e[32m${UMEE_AT_ETH_BALANCE}\e[39muumee"
+	echo -e "umee wallet: \e[32m${UMEE_BALANCE}\e[39m uumee"
+	echo -e "ethereum wallet: \e[32m${ETH_BALANCE}\e[39m eth \e[32m${UMEE_AT_ETH_BALANCE}\e[39m uumee"
   echo -e ""
   echo -e "ORCHESTRATOR STATS:"
-  echo -e "balance: \e[32m${ORC_BALANCE}\e[39meth \e[32m${ORC_UMEE_BALANCE}\e[39muumee"
-  echo -e "profit: \e[32m${PROFIT}\e[39muumee (\e[32m${PROFIT_USD}\e[39m USD)"
-  echo -e "loss: \e[31m${LOSS}\e[39meth (\e[31m${LOSS_USD}\e[39m USD)"
+  echo -e "balance: \e[32m${ORC_BALANCE}\e[39m eth \e[32m${ORC_UMEE_BALANCE}\e[39m umee"
+  echo -e "profit: \e[32m${PROFIT}\e[39m umee (\e[32m${PROFIT_USD}\e[39m USD)"
+  echo -e "loss: \e[31m${LOSS}\e[39m eth (\e[31m${LOSS_USD}\e[39m USD)"
   if [[ $(bc -l <<< "${PNL}>0") -eq 1 ]]; then
     echo -e "PnL: \e[32m${PNL}\e[39m USD"
   else
