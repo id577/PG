@@ -67,7 +67,7 @@ function monitoring(){
   
   LOSS_USD=$(bc<<<"scale=2;$LOSS*$ETH_PRICE")
   PROFIT_USD=$(bc<<<"scale=2;$PROFIT*$UMEE_PRICE")
-  PNL=$(bc<<<"scale=2;$PROFIT-$LOSS")
+  PNL=$(bc<<<"scale=2;$PROFIT_USD-$LOSS_USD")
   
 	TX_PEGGO=$(curl -s localhost:1317/peggy/v1/module_state | grep ${UMEE_WALLET} | wc -l)
 	echo -e "------------ UMEE-GW MONITOR ------------"
