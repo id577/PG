@@ -1563,7 +1563,7 @@ echo -e " 9) IronFish exporter"
 echo -e " 10) Minima exporter"
 echo -e " 11) Cosmos exporter"
 echo -e " 12) Massa exporter"
-echo -e " 13) Cosmos Auto-Delegation
+echo -e " 13) Cosmos Auto-Delegation"
 echo -e " 0) DELETE old custom exporters (such as nym_pg, kira_pg etc.)"   
 echo -e " h) HELP"                                                                  
 echo -e " x) EXIT"
