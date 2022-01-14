@@ -1435,6 +1435,81 @@ read -n 1 -s -r -p "Press any key to continue..."
 }
 
 ###################################################################################
+function installUmeeAD {
+
+echo -e "UmeeAD installation starts..."
+sleep 3
+read -p "Enter your umee wallet address: " UMEE_WALLET
+read -p "Enter your wallet password: " UUMEE_WALLET_PASSWORD
+read -p "Enter your validator address: " UMEE_VALOPER
+read -p "Enter chain-id: " UMEE_CHAIN
+read -p "Enter delay: (default 6 hours)" DELAY_TIME
+DELAY_TIME=${DELAY_TIME:-21600}
+
+sudo tee <<EOF1 >/dev/null /usr/local/bin/umee_ad.sh
+#!/bin/bash
+
+UMEE_WALLET=$UMEE_WALLET
+UUMEE_WALLET_PASSWORD=$UUMEE_WALLET_PASSWORD
+UMEE_VALOPER=$UMEE_VALOPER
+UMEE_CHAIN=#UMEE_CHAIN
+DELAY_TIME=$DELAY_TIME
+FEES=300
+
+while true; do
+	START_AMOUNT=\$($(which umeed) q bank balances \$UMEE_WALLET -o json | grep -Eo "uumee\\",\\"amount\\":\\"[0-9]*" | grep -Eo "[0-9]*")
+	sleep 10
+	echo -e "\${UMEE_WALLET_PASSWORD}\\n" | $(which umeed) tx distribution withdraw-all-rewards tx distribution withdraw-all-rewards --from=\$UMEE_WALLET --chain-id=\$UMEE_CHAIN --fees=\${FEES}uumee -y
+	sleep 10
+	echo -e "\${UMEE_WALLET_PASSWORD}\\n" | $(which umeed) tx distribution withdraw-rewards \$UMEE_VALOPER --from=\$UMEE_WALLET --chain-id=\$UMEE_CHAIN --fees=\${FEES}uumee --commission -y
+	sleep 15
+	END_AMOUNT=\$($(which umeed) q bank balances \$UMEE_WALLET -o json | grep -Eo "uumee\\",\\"amount\\":\\"[0-9]*" | grep -Eo "[0-9]*")
+	END_AMOUNT=(( \$END_AMOUNT - \$START_AMOUNT ))
+	echo -e "\${END_AMOUNT} uumee has been withdrawn"
+	END_AMOUNT=(( \$END_AMOUNT - \$FEES ))
+	echo -e "\${UMEE_WALLET_PASSWORD}\\n" | $(which umeed) tx staking delegate \$UMEE_VALOPER \$END_AMOUNT --from=\$UMEE_WALLET --chain-id=\$UMEE_CHAIN --fees=\${FEES}uumee -y
+	echo "\$END_AMOUNT has been delegated"
+	echo "Sleep \${DELAY_TIME} sec"
+	sleep \$DELAY_TIME
+done
+
+EOF1
+
+chmod +x /usr/local/bin/umee_ad.sh
+
+sudo tee <<EOF >/dev/null /etc/systemd/system/umee_ad.service
+[Unit]
+Description=umee Auto-Delegation
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=$USER
+Group=$USER
+Type=simple
+ExecStart=/usr/local/bin/umee_ad.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload && sudo systemctl enable umee_ad && sudo systemctl start umee_ad
+ 
+VAR=$(systemctl is-active umee_ad.service)
+
+if [ "$VAR" = "active" ]
+then
+	echo ""
+	echo -e "umee_ad.service \e[32minstalled and works\e[39m! You can check logs by: journalctl -u umee_ad -f"
+	echo ""
+else
+	echo ""
+	echo -e "Something went wrong. \e[31mInstallation failed\e[39m! You can check logs by: journalctl -u umee_ad -f"
+	echo ""
+fi
+read -n 1 -s -r -p "Press any key to continue..."
+}
+###################################################################################
 while true; do
 
 echo -e ""
@@ -1453,6 +1528,7 @@ echo -e " 9) IronFish exporter"
 echo -e " 10) Minima exporter"
 echo -e " 11) Cosmos exporter"
 echo -e " 12) Massa exporter"
+echo -e " 13) Cosmos Auto-Delegation
 echo -e " 0) DELETE old custom exporters (such as nym_pg, kira_pg etc.)"   
 echo -e " h) HELP"                                                                  
 echo -e " x) EXIT"
@@ -1471,6 +1547,7 @@ case $option in
 		10) installMinimaExporter;;
 		11) installCosmosExporter;;
 		12) installMassaExporter;;
+		13) installCosmosAD;;
 		0) clearInstance;;
 		50) installAleoWatchdog;;
 		51) installStreamrBalance;;
