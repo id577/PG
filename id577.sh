@@ -1446,6 +1446,12 @@ read -p "Enter chain-id: " UMEE_CHAIN
 read -p "Enter delay: (default 6 hours)" DELAY_TIME
 DELAY_TIME=${DELAY_TIME:-21600}
 
+CV=$(systemctl list-unit-files | grep "umee_ad")
+if [ "$CV" != "" ]
+then
+	systemctl stop umee_ad
+fi
+
 sudo tee <<EOF1 >/dev/null /usr/local/bin/umee_ad.sh
 #!/bin/bash
 
