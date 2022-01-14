@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #VARIABLES
-VERSION='0.2.892'
+VERSION='0.2.893'
 NODE_EXPORTER_VERSION='1.2.2'
 PROMETHEUS_VERSION='2.30.2'
 GRAFANA_VERSION='8.1.5'
@@ -1450,10 +1450,11 @@ sudo tee <<EOF1 >/dev/null /usr/local/bin/umee_ad.sh
 #!/bin/bash
 
 UMEE_WALLET=$UMEE_WALLET
-UUMEE_WALLET_PASSWORD=$UUMEE_WALLET_PASSWORD
+UMEE_WALLET_PASSWORD=$UUMEE_WALLET_PASSWORD
 UMEE_VALOPER=$UMEE_VALOPER
 UMEE_CHAIN=#UMEE_CHAIN
 DELAY_TIME=$DELAY_TIME
+MIN_AMOUNT_FOR_DELEGATION=1
 FEES=300
 
 MSG=1
@@ -1462,10 +1463,10 @@ while true; do
 	START_AMOUNT=\$($(which umeed) q bank balances \$UMEE_WALLET -o json | grep -Eo "uumee\\",\\"amount\\":\\"[0-9]*" | grep -Eo "[0-9]*")
 	sleep 10
 	
-	while [ $MSG -ne 0 ]; do
-		echo -e "\${UMEE_WALLET_PASSWORD}\\n" | $(which umeed) tx distribution withdraw-all-rewards tx distribution withdraw-all-rewards --from=\$UMEE_WALLET --chain-id=\$UMEE_CHAIN --fees=\${FEES}uumee -y
+	while [ \$MSG -ne 0 ]; do
+		echo -e "\${UMEE_WALLET_PASSWORD}\\n" | $(which umeed) tx distribution withdraw-all-rewards --from=\$UMEE_WALLET --chain-id=\$UMEE_CHAIN --fees=\${FEES}uumee -y &>> cosmos_ad_logs.txt
 		MSG=\$?
-		if [ $MSG -eq 0 ]; then
+		if [ \$MSG -eq 0 ]; then
 			echo -e "Successfully withdraw-all-rewards!"
 		else
 			echo -e "Failed to withdraw-all-rewards. Retry in 10 sec..."
@@ -1475,10 +1476,10 @@ while true; do
 	
 	MSG=1
 	
-	while [ $MSG -ne 0 ]; do
-		echo -e "\${UMEE_WALLET_PASSWORD}\\n" | $(which umeed) tx distribution withdraw-rewards \$UMEE_VALOPER --from=\$UMEE_WALLET --chain-id=\$UMEE_CHAIN --fees=\${FEES}uumee --commission -y
+	while [ \$MSG -ne 0 ]; do
+		echo -e "\${UMEE_WALLET_PASSWORD}\\n" | $(which umeed) tx distribution withdraw-rewards \$UMEE_VALOPER --from=\$UMEE_WALLET --chain-id=\$UMEE_CHAIN --fees=\${FEES}uumee --commission -y &>> cosmos_ad_logs.txt
 		MSG=\$?
-		if [ $MSG -eq 0 ]; then
+		if [ \$MSG -eq 0 ]; then
 			echo -e "Successfully withdraw rewards from commission!"
 		else
 			echo -e "Failed to withdraw rewards from commission. Retry in 10 sec..."
@@ -1489,20 +1490,26 @@ while true; do
 	MSG=1
 	
 	END_AMOUNT=\$($(which umeed) q bank balances \$UMEE_WALLET -o json | grep -Eo "uumee\\",\\"amount\\":\\"[0-9]*" | grep -Eo "[0-9]*")
-	END_AMOUNT=(( \$END_AMOUNT - \$START_AMOUNT ))
+	END_AMOUNT=\$(( \$END_AMOUNT - \$START_AMOUNT ))
 	echo -e "Total \${END_AMOUNT} uumee has been withdrawn"
-	END_AMOUNT=(( \$END_AMOUNT - \$FEES ))
+	END_AMOUNT=\$(( \$END_AMOUNT - \$FEES ))
 	
-	while [ $MSG -ne 0 ]; do
-		echo -e "\${UMEE_WALLET_PASSWORD}\\n" | $(which umeed) tx staking delegate \$UMEE_VALOPER \$END_AMOUNT --from=\$UMEE_WALLET --chain-id=\$UMEE_CHAIN --fees=\${FEES}uumee -y
+	while [ \$MSG -ne 0 ]; do
+		if [ \$END_AMOUNT -lt \$MIN_AMOUNT_FOR_DELEGATION ]; then
+			echo "Too low balance for delegation. Skip..."
+			break
+		fi
+		echo -e "\${UMEE_WALLET_PASSWORD}\\n" | $(which umeed) tx staking delegate \$UMEE_VALOPER \${END_AMOUNT}uumee --from=\$UMEE_WALLET --chain-id=\$UMEE_CHAIN --fees=\${FEES}uumee -y &>> cosmos_ad_logs.txt
 		MSG=\$?
-		if [ $MSG -eq 0 ]; then
+		if [ \$MSG -eq 0 ]; then
 			echo -e "Successfully delegated \$END_AMOUNT umee{!"
 		else
 			echo -e "Failed to delegate. Retry in 10 sec..."
 		fi
 		sleep 10
 	done
+	
+	MSG=1
 	
 	echo "Sleep \${DELAY_TIME} sec"
 	sleep \$DELAY_TIME
@@ -1563,7 +1570,7 @@ echo -e " 9) IronFish exporter"
 echo -e " 10) Minima exporter"
 echo -e " 11) Cosmos exporter"
 echo -e " 12) Massa exporter"
-echo -e " 13) Cosmos Auto-Delegation"
+echo -e " 13) Umee Auto-Delegation"
 echo -e " 0) DELETE old custom exporters (such as nym_pg, kira_pg etc.)"   
 echo -e " h) HELP"                                                                  
 echo -e " x) EXIT"
@@ -1582,7 +1589,7 @@ case $option in
 		10) installMinimaExporter;;
 		11) installCosmosExporter;;
 		12) installMassaExporter;;
-		13) installCosmosAD;;
+		13) installUmeeAD;;
 		0) clearInstance;;
 		50) installAleoWatchdog;;
 		51) installStreamrBalance;;
