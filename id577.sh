@@ -1444,7 +1444,7 @@ read -p "Enter your wallet password: " UUMEE_WALLET_PASSWORD
 read -p "Enter your validator address: " UMEE_VALOPER
 read -p "Enter chain-id: " UMEE_CHAIN
 read -p "Enter delay: (default 6 hours)" DELAY_TIME
-DELAY_TIME=${DELAY_TIME:-21600}
+DELAY_TIME=${DELAY_TIME:-60}
 
 CV=$(systemctl list-unit-files | grep "umee_ad")
 if [ "$CV" != "" ]
@@ -1458,7 +1458,7 @@ sudo tee <<EOF1 >/dev/null /usr/local/bin/umee_ad.sh
 UMEE_WALLET=$UMEE_WALLET
 UMEE_WALLET_PASSWORD=$UUMEE_WALLET_PASSWORD
 UMEE_VALOPER=$UMEE_VALOPER
-UMEE_CHAIN=#UMEE_CHAIN
+UMEE_CHAIN=$UMEE_CHAIN
 DELAY_TIME=$DELAY_TIME
 MIN_AMOUNT_FOR_DELEGATION=1
 FEES=300
@@ -1508,7 +1508,7 @@ while true; do
 		echo -e "\${UMEE_WALLET_PASSWORD}\\n" | $(which umeed) tx staking delegate \$UMEE_VALOPER \${END_AMOUNT}uumee --from=\$UMEE_WALLET --chain-id=\$UMEE_CHAIN --fees=\${FEES}uumee -y &>> cosmos_ad_logs.txt
 		MSG=\$?
 		if [ \$MSG -eq 0 ]; then
-			echo -e "Successfully delegated \$END_AMOUNT umee{!"
+			echo -e "Successfully delegated \$END_AMOUNT uumee!"
 		else
 			echo -e "Failed to delegate. Retry in 10 sec..."
 		fi
