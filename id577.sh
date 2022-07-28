@@ -985,7 +985,7 @@ version=\$(echo \$temp | jq .response.version | sed 's/"//g')
 total_devices=\$(echo \$temp | jq .response.devices)
 status=\$(echo \$temp | jq .status)
 
-if [ "\$lastblock" = "" ]
+if [ "\$lastblock" = "" ]if [ "\$lastblock" = "" ]
 then lastblock=0
 elif [ "\$connections" = "" ]
 then connections=0
@@ -994,9 +994,19 @@ then status=1
 else status=0
 fi
 
+temp=\$(curl -s 127.0.0.1:9002/incentivecash)
+
+incentivecash_status=\$(echo \$temp | jq .status)
+daily_rewards=\$(echo \$temp | jq .response.details.rewards.dailyRewards)
+
+if [ "\$incentivecash_status" = "true" ]
+then incentivecash_status=1
+else incentivecash_status=0
+fi
+
 #LOGS
 echo -e "minima node info: version=\${version}, total_devices=\${total_devices}"
-echo -e "minima status report: status=\${status}, lastblock=\${lastblock}, connections=\${connections}"
+echo -e "minima status report: status=\${status}, lastblock=\${lastblock}, connections=\${connections}, incentivecash_status=\${incentivecash_status}, daily_rewards=\${daily_rewards}"
 
 if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
 then
