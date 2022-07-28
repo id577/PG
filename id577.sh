@@ -985,7 +985,7 @@ version=\$(echo \$temp | jq .response.version | sed 's/"//g')
 total_devices=\$(echo \$temp | jq .response.devices)
 status=\$(echo \$temp | jq .status)
 
-if [ "\$lastblock" = "" ]if [ "\$lastblock" = "" ]
+if [ "\$lastblock" = "" ]
 then lastblock=0
 elif [ "\$connections" = "" ]
 then connections=0
