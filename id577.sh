@@ -1243,6 +1243,7 @@ then
 		echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
 	fi
 fi
+read -p "Enter your wallet password: " MASSA_PASSWORD
 echo -e "massa_exporter installation starts..."
 sleep 3
 CV=$(systemctl list-unit-files | grep "massa_exporter.service")
@@ -1259,6 +1260,7 @@ sudo tee <<EOF1 >/dev/null /usr/local/bin/massa_exporter.sh
 #!/bin/bash
 
 PUSHGATEWAY_ADDRESS=$PUSHGATEWAY_ADDRESS
+MASSA_PASSWORD=$MASSA_PASSWORD
 JOB="massa"
 metric_1='my_massa_balance'
 metric_2='my_massa_rolls'
@@ -1269,12 +1271,12 @@ metric_5='my_massa_outgoing_peers'
 function getMetrics {
 
 cd $HOME/massa/massa-client/
-wallet_info=\$(./massa-client wallet_info)
+wallet_info=\$(./massa-client wallet_info -p \$MASSA_PASSWORD)
 balance=\$(echo \$wallet_info | grep -Eo "Final balance: [0-9]+[\.]{0,1}[0-9]*" |  grep -Eo "[0-9]+[\.]{0,1}[0-9]*")
 rolls=\$(echo \$wallet_info | grep -Eo "Final rolls: [0-9]+[\.]{0,1}[0-9]*" |  grep -Eo "[0-9]+[\.]{0,1}[0-9]*")
 active_rolls=\$(echo \$wallet_info | grep -Eo "Active rolls: [0-9]+" |  grep -Eo "[0-9]+")
 
-status=\$(./massa-client get_status)
+status=\$(./massa-client get_status -p \$MASSA_PASSWORD)
 incoming_peers=\$(echo \$status | grep -Eo "In connections: [0-9]+*" | grep -Eo "[0-9]+")
 outgoing_peers=\$(echo \$status | grep -Eo "Out connections: [0-9]+*" | grep -Eo "[0-9]+")
 current_cycle=\$(echo \$status | grep -Eo "Current cycle: [0-9]+*" | grep -Eo "[0-9]+")
