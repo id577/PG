@@ -807,7 +807,7 @@ metric_8='my_ironfish_is_synced'
 function getMetrics {
 
 
-temp=\$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./run status)
+temp=\$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./ironfish status)
 
 status=\$(echo \$temp | grep -Eo 'Node(:)* [A-Z]*' | cut -d : -f2 | cut -d ' ' -f2)
 if [ "\$status" = "STARTED" ]
@@ -861,7 +861,7 @@ fi
 
 version=\$(echo \$temp | grep -Eo 'Version(:)* [0-9]*.[0-9]*.[0-9]*' | cut -d ' ' -f2)
 
-temp=\$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./run accounts:balance $IRONFISH_WALLET)
+temp=\$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./ironfish accounts:balance $IRONFISH_WALLET)
 
 balance=\$(echo \$temp | sed -E 's/,| //g' | grep -Eo '\\\$ORE [0-9]+' | grep -Eo -m 1 '[0-9]+')
 if [ "\$balance" = "" ]
@@ -918,7 +918,7 @@ After=network-online.target
 User=$USER
 Group=$USER
 Type=simple
-WorkingDirectory=/$HOME/ironfish/ironfish-cli/bin 
+WorkingDirectory=/usr/bin 
 ExecStart=/usr/local/bin/ironfish_exporter.sh
 
 [Install]
