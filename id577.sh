@@ -1273,7 +1273,7 @@ function getMetrics {
 cd $HOME/massa/massa-client/
 wallet_info=\$(./massa-client wallet_info -p \$MASSA_PASSWORD)
 balance=\$(echo \$wallet_info | grep -Eo "Sequential balance: final=[0-9]+[\.]{0,1}[0-9]*" |  grep -Eo "[0-9]+[\.]{0,1}[0-9]*")
-rolls=\$(echo \$wallet_info | grep -Eo "Rolls: active=[0-9]+, final=[0-9]+" |  grep -Eo "[0-9]+" | awk '{print $2}')
+rolls=\$(echo \$wallet_info | grep -Eo "Rolls: active=[0-9]+, final=[0-9]+" |  grep -Eo "[0-9]+" | awk '{print \$2}')
 active_rolls=\$(echo \$wallet_info |  grep -Eo "Rolls: active=[0-9]+" |  grep -Eo "[0-9]+")
 
 status=\$(./massa-client get_status -p \$MASSA_PASSWORD)
