@@ -1272,15 +1272,14 @@ function getMetrics {
 
 cd $HOME/massa/massa-client/
 wallet_info=\$(./massa-client wallet_info -p \$MASSA_PASSWORD)
-balance=\$(echo \$wallet_info | grep -Eo "Final balance: [0-9]+[\.]{0,1}[0-9]*" |  grep -Eo "[0-9]+[\.]{0,1}[0-9]*")
-rolls=\$(echo \$wallet_info | grep -Eo "Final rolls: [0-9]+[\.]{0,1}[0-9]*" |  grep -Eo "[0-9]+[\.]{0,1}[0-9]*")
-active_rolls=\$(echo \$wallet_info | grep -Eo "Active rolls: [0-9]+" |  grep -Eo "[0-9]+")
+balance=\$(echo \$wallet_info | grep -Eo "Sequential balance: final=[0-9]+[\.]{0,1}[0-9]*" |  grep -Eo "[0-9]+[\.]{0,1}[0-9]*")
+rolls=\$(echo \$wallet_info | grep -Eo "Rolls: active=[0-9]+, final=[0-9]+" |  grep -Eo "[0-9]+" | awk '{print $2}')
+active_rolls=\$(echo \$wallet_info |  grep -Eo "Rolls: active=[0-9]+" |  grep -Eo "[0-9]+")
 
 status=\$(./massa-client get_status -p \$MASSA_PASSWORD)
 incoming_peers=\$(echo \$status | grep -Eo "In connections: [0-9]+*" | grep -Eo "[0-9]+")
 outgoing_peers=\$(echo \$status | grep -Eo "Out connections: [0-9]+*" | grep -Eo "[0-9]+")
 current_cycle=\$(echo \$status | grep -Eo "Current cycle: [0-9]+*" | grep -Eo "[0-9]+")
-staker_count=\$(echo \$status | grep -Eo "Staker count: [0-9]+*" | grep -Eo "[0-9]+")
 node_id=\$(echo \$status | grep -Eo "Node's ID: \w{50}" | grep -Eo -m 1 "\w{50}" )
 node_version=\$(echo \$status | grep -Eo "Version: TEST.[0-9]+.[0-9]+" | sed 's/V/v/g' | sed 's/: TEST./=/g')
 cd
@@ -1316,7 +1315,7 @@ fi
 
 #LOGS
 echo -e "massa node info: node_id=\${node_id}, \${node_version}"
-echo -e "massa status report: balance=\${balance}, rolls=\${rolls}, active_rolls=\${active_rolls}, incoming_peers=\${incoming_peers}, outgoing_peers=\${outgoing_peers}, current_cycle=\${current_cycle}, staker_count=\${staker_count}"
+echo -e "massa status report: balance=\${balance}, rolls=\${rolls}, active_rolls=\${active_rolls}, incoming_peers=\${incoming_peers}, outgoing_peers=\${outgoing_peers}, current_cycle=\${current_cycle}"
 
 if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
 then
