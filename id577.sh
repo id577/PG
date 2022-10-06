@@ -205,9 +205,9 @@ sudo dpkg -i grafana_${GRAFANA_VERSION}_amd64.deb
 rm -rf grafana*
 
 sudo systemctl daemon-reload && sudo systemctl enable grafana-server && sudo systemctl start grafana-server
-sleep 10
+sleep 5
 
-VAR=$(systemctl is-active grafana.service)
+VAR=$(systemctl is-active grafana-server.service)
 if [ "$VAR" = "active" ]
 then
 	echo -e ""
