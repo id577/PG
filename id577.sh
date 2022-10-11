@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #VARIABLES
-VERSION='0.3.1'
+VERSION='0.3.2'
 NODE_EXPORTER_VERSION='1.4.0'
 PROMETHEUS_VERSION='2.37.1'
 GRAFANA_VERSION='9.2.0~beta1'
@@ -1240,8 +1240,8 @@ function getMetrics {
 
 cd $HOME/massa/massa-client/
 wallet_info=\$(./massa-client wallet_info -p \$MASSA_PASSWORD)
-balance=\$(echo \$wallet_info | grep -Eo "Sequential balance: final=[0-9]+[\.]{0,1}[0-9]*" |  grep -Eo "[0-9]+[\.]{0,1}[0-9]*")
-rolls=\$(echo \$wallet_info | grep -Eo "Rolls: active=[0-9]+, final=[0-9]+" |  grep -Eo "[0-9]+" | awk '{print \$2}')
+balance=\$(echo \$wallet_info | grep -Eo "Balance: final=[0-9]+[\.]{0,1}[0-9]*" |  grep -Eo "[0-9]+[\.]{0,1}[0-9]*")
+rolls=\$(echo \$wallet_info | grep -Eo "Rolls: active=[0-9]+, final=[0-9]+" | grep -Eo "final=[0-9]+" | grep -Eo "[0-9]+")
 active_rolls=\$(echo \$wallet_info |  grep -Eo "Rolls: active=[0-9]+" |  grep -Eo "[0-9]+")
 
 status=\$(./massa-client get_status -p \$MASSA_PASSWORD)
