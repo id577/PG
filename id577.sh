@@ -4,7 +4,7 @@
 VERSION='0.3.0'
 NODE_EXPORTER_VERSION='1.4.0'
 PROMETHEUS_VERSION='2.37.1'
-GRAFANA_VERSION='9.2.0~beta1'
+GRAFANA_VERSION='9.1.6'
 PUSHGATEWAY_VERSION='1.4.1'
 LOKI_VERSION='2.6.1'
 PROMTAIL_VERSION='2.3.0'
@@ -205,9 +205,9 @@ sudo dpkg -i grafana_${GRAFANA_VERSION}_amd64.deb
 rm -rf grafana*
 
 sudo systemctl daemon-reload && sudo systemctl enable grafana-server && sudo systemctl start grafana-server
-sleep 5
+sleep 10
 
-VAR=$(systemctl is-active grafana-server.service)
+VAR=$(systemctl is-active grafana.service)
 if [ "$VAR" = "active" ]
 then
 	echo -e ""
