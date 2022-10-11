@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #VARIABLES
-VERSION='0.3.0'
+VERSION='0.3.1'
 NODE_EXPORTER_VERSION='1.4.0'
 PROMETHEUS_VERSION='2.37.1'
 GRAFANA_VERSION='9.2.0~beta1'
@@ -770,14 +770,6 @@ read -n 1 -s -r -p "Press any key to continue..."
 ###################################################################################
 function installIronfishExporter {
 
-if [ ! $PUSHGATEWAY_ADDRESS ] 
-then
-	read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091 or leave empty if you don't use pushgateway): " PUSHGATEWAY_ADDRESS
-	if [ "$PUSHGATEWAY_ADDRESS" != "" ] 
-	then
-		echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
-	fi
-fi
 source $HOME/.bash_profile
 echo -e "ironfish_exporter installation starts..."
 sleep 3
@@ -789,27 +781,24 @@ then
 	rm -rf /usr/local/bin/ironfish_exporter.sh
 	rm -rf /etc/systemd/system/ironfish_exporter*
 fi
+cd /usr/bin
+echo -e "Defining a default wallet..."
+DEFAULT_WALLET=$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./ironfish accounts:which)
+if [ "$DEFAULT_WALLET" != "" ]; then
+	echo -e "Success! Default wallet is ${DEFAULT_WALLET}"
+else
+	echo -e "Failed to determine default wallet!"
+	read -p "Enter your default wallet name: " DEFAULT_WALLET
+fi
 
 sudo tee <<EOF1 >/dev/null /usr/local/bin/ironfish_exporter.sh
 #!/bin/bash
 
-PUSHGATEWAY_ADDRESS=$PUSHGATEWAY_ADDRESS
-JOB="ironfish"
-metric_1='my_ironfish_status'
-metric_2='my_ironfish_miner_status'
-metric_3='my_ironfish_peers'
-metric_4='my_ironfish_blocks_height'
-metric_5='my_ironfish_mined_blocks'
-metric_6='my_ironfish_balance'
-metric_7='my_ironfish_p2p_status'
-metric_8='my_ironfish_is_synced'
-
 function getMetrics {
-
 
 temp=\$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./ironfish status)
 
-status=\$(echo \$temp | grep -Eo 'Node(:)* [A-Z]*' | cut -d : -f2 | cut -d ' ' -f2)
+status=\$(echo \$temp | grep -Eo 'Node(:)* [A-Z]* ' | cut -d : -f2 | cut -d ' ' -f2)
 if [ "\$status" = "STARTED" ]
 then
 	status=1
@@ -851,7 +840,7 @@ else
 	p2p_status=0
 fi
 
-is_synced=\$(echo \$temp | grep -Eo 'Blockchain(:)* [A-Z]*' | cut -d : -f2 | cut -d ' ' -f2)
+is_synced=\$(echo \$temp | grep -Eo '[0-9]+m [0-9]+s \([A-Z]*\)'| cut -d ' ' -f3 | grep -Eo '[A-Z]+')
 if [ "\$is_synced" = "SYNCED" ]
 then
 	is_synced=1
@@ -860,43 +849,20 @@ else
 fi
 
 version=\$(echo \$temp | grep -Eo 'Version(:)* [0-9]*.[0-9]*.[0-9]*' | cut -d ' ' -f2)
+node_name=$(echo $temp | grep -Eo 'Node Name(:)* [0-9A-Za-z]*' | cut -d ' ' -f3)
+graffiti=$(echo $temp | grep -Eo 'Graffiti(:)* [0-9A-Za-z]*' | cut -d ' ' -f2)
 
-temp=\$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./ironfish accounts:balance $IRONFISH_WALLET)
+temp=\$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./ironfish accounts:balance $DEFAULT_WALLET)
 
-balance=\$(echo \$temp | sed -E 's/,| //g' | grep -Eo '\\\$ORE [0-9]+' | grep -Eo -m 1 '[0-9]+')
+balance=\$(echo \$temp | grep -Eo "IRON [0-9]+.[0-9]+" |  grep -Eo "[0-9]+.[0-9]+")
 if [ "\$balance" = "" ]
 then
 	balance=0
 fi
-balance=\$(( \$balance / 100000000 ))
 
 #LOGS
-echo -e "ironfish node info: version=\${version}"
+echo -e "ironfish node info: node_name=\${node_name}, block_graffiti=\${graffiti}, version=\${version}"
 echo -e "Ironfish status report: node_status=\${status}, miner_status=\${miner_status}, peers=\${peers}, blocks=\${blocks_height}, mined_blocks=\${mined_blocks}, p2p_status=\${p2p_status}, balance=\${balance}, is_synced=\${is_synced}"
-
-if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
-then
-cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/$IP_ADDRESS
-# TYPE my_ironfish_status gauge
-\$metric_1 \$status
-# TYPE my_ironfish_miner_status gauge
-\$metric_2 \$miner_status
-# TYPE my_ironfish_peers gauge
-\$metric_3 \$peers
-# TYPE my_ironfish_blocks_height gauge
-\$metric_4 \$blocks_height
-# TYPE my_ironfish_mined_blocks gauge
-\$metric_5 \$mined_blocks
-# TYPE my_ironfish_balance gauge
-\$metric_6 \$balance
-# TYPE my_ironfish_p2p_status gauge
-\$metric_7 \$p2p_status
-# TYPE my_ironfish_is_synced gauge
-\$metric_8 \$is_synced
-EOF
-echo -e "sended to pushgataway."
-fi
-}
 
 while true; do
 	getMetrics
