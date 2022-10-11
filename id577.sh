@@ -849,8 +849,8 @@ else
 fi
 
 version=\$(echo \$temp | grep -Eo 'Version(:)* [0-9]*.[0-9]*.[0-9]*' | cut -d ' ' -f2)
-node_name=$(echo $temp | grep -Eo 'Node Name(:)* [0-9A-Za-z]*' | cut -d ' ' -f3)
-graffiti=$(echo $temp | grep -Eo 'Graffiti(:)* [0-9A-Za-z]*' | cut -d ' ' -f2)
+node_name=\$(echo \$temp | grep -Eo 'Node Name(:)* [0-9A-Za-z]*' | cut -d ' ' -f3)
+graffiti=\$(echo \$temp | grep -Eo 'Graffiti(:)* [0-9A-Za-z]*' | cut -d ' ' -f2)
 
 temp=\$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./ironfish accounts:balance $DEFAULT_WALLET)
 
