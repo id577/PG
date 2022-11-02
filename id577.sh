@@ -945,7 +945,7 @@ metric_3='my_minima_connections'
 
 function getMetrics {
 
-temp=\$(curl -s 127.0.0.1:9002/status)
+temp=\$(curl -s 127.0.0.1:9005/status)
 
 lastblock=\$(echo \$temp | jq .response.chain.block)
 connections=\$(echo \$temp | jq .response.network.connected)
@@ -962,7 +962,7 @@ then status=1
 else status=0
 fi
 
-temp=\$(curl -s 127.0.0.1:9002/incentivecash)
+temp=\$(curl -s 127.0.0.1:9005/incentivecash)
 
 incentivecash_status=\$(echo \$temp | jq .status)
 daily_rewards=\$(echo \$temp | jq .response.details.rewards.dailyRewards)
