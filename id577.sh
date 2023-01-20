@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #VARIABLES
-VERSION='0.3.2'
+VERSION='0.4.1'
 NODE_EXPORTER_VERSION='1.4.0'
 PROMETHEUS_VERSION='2.37.1'
 GRAFANA_VERSION='9.2.0~beta1'
@@ -422,14 +422,6 @@ read -n 1 -s -r -p "Press any key to continue..."
 ###################################################################################
 function installAleoExporter {
 
-if [ ! $PUSHGATEWAY_ADDRESS ] 
-then
-	read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091 or leave empty if you don't use pushgateway): " PUSHGATEWAY_ADDRESS
-	if [ "$PUSHGATEWAY_ADDRESS" != "" ] 
-	then
-		echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
-	fi
-fi
 echo -e "Aleo_exporter installation starts..."
 sleep 3
 
@@ -446,13 +438,8 @@ source $HOME/.bash_profile
 
 sudo tee <<EOF1 >/dev/null /usr/local/bin/aleo_exporter.sh
 #!/bin/bash
-PUSHGATEWAY_ADDRESS=$PUSHGATEWAY_ADDRESS
-job="aleo"
 node="localhost:3032"
-metric_1='my_aleo_peers_count'
-metric_2='my_aleo_blocks_count'
 function getMetrics {
-status=
 peers_count=\$(curl -s --data-binary '{"jsonrpc": "2.0", "id":"documentation", "method": "getconnectedpeers", "params": [] }' -H 'content-type: application/json' http://\$node/ | jq '.result[]' | wc -l)
 if [ "\$peers_count" = "" ]
 then peers_count=0
@@ -473,17 +460,8 @@ else
 fi
 #LOGS
 echo -e "Aleo status report: status=\${status}, peers_count=\${peers_count}, blocks_count=\${blocks_count}, blocks_mined_count=n/a"
-if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
-then
-cat <<EOF | curl -s --data-binary @- \$PUSHGATEWAY_ADDRESS/metrics/job/\$job/instance/$IP_ADDRESS
-# TYPE my_aleo_peers_count gauge
-\$metric_1 \$peers_count
-# TYPE my_aleo_blocks_count gauge
-\$metric_2 \$blocks_count
-EOF
-echo -e "sended to pushgataway."
-fi
 }
+
 while true; do
 	getMetrics
 	echo -e "sleep 60 sec."
@@ -527,14 +505,6 @@ read -n 1 -s -r -p "Press any key to continue..."
 ###################################################################################
 function installKiraExporter {
 
-if [ ! $PUSHGATEWAY_ADDRESS ] 
-then
-	read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091 or leave empty if you don't use pushgateway): " PUSHGATEWAY_ADDRESS
-	if [ "$PUSHGATEWAY_ADDRESS" != "" ] 
-	then
-		echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
-	fi
-fi
 echo -e "Kira_exporter installation starts..."
 sleep 3
 CV=$(systemctl list-unit-files | grep "kira_exporter.service")
@@ -556,11 +526,7 @@ source $HOME/.bash_profile
 sudo tee <<EOF1 >/dev/null /usr/local/bin/kira_exporter.sh
 #!/bin/bash
 PUSHGATEWAY_ADDRESS=$PUSHGATEWAY_ADDRESS
-JOB="kira"
-metric_1='my_kira_top'
-metric_2='my_kira_streak'
-metric_3='my_kira_rank'
-metric_4='my_kira_status'
+
 function getMetrics {
 temp=\$(curl -s http://localhost:11000/api/valopers | jq | grep -10 \$(curl -s http://localhost:36657/status | jq '.result.validator_info.address'))
 status_temp=\$(echo \$temp | grep -E -o 'status\": \"[A-Z]*\"' | grep -E -o '[A-Z]*')
@@ -587,20 +553,7 @@ then
 fi
 #LOGS
 echo -e "Kira status report: status=\${status}, top=\${top}, rank=\${rank}, streak=\${streak}"
-if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
-then
-cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/$IP_ADDRESS
-# TYPE my_kira_top gauge
-\$metric_1 \$top
-# TYPE my_kira_streak gauge
-\$metric_2 \$streak
-# TYPE my_kira_rank gauge
-\$metric_3 \$rank
-# TYPE my_kira_status gauge
-\$metric_4 \$status
-EOF
-echo -e "sended to pushgataway."
-fi
+
 }
 while true; do
 	getMetrics
@@ -665,7 +618,7 @@ then
 fi
 cd /usr/bin
 echo -e "Defining a default wallet..."
-DEFAULT_WALLET=$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./ironfish accounts:which)
+DEFAULT_WALLET=$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./ironfish wallet:which)
 if [ "$DEFAULT_WALLET" != "" ]; then
 	echo -e "Success! Default wallet is ${DEFAULT_WALLET}"
 else
@@ -723,7 +676,7 @@ fi
 version=\$(echo \$temp | grep -Eo 'Version(:)* [0-9]*.[0-9]*.[0-9]*' | cut -d ' ' -f2)
 node_name=\$(echo \$temp | grep -Eo 'Node Name(:)* [0-9A-Za-z]*' | cut -d ' ' -f3)
 graffiti=\$(echo \$temp | grep -Eo 'Graffiti(:)* [0-9A-Za-z]*' | cut -d ' ' -f2)
-temp=\$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./ironfish accounts:balance $DEFAULT_WALLET)
+temp=\$(OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 ./ironfish wallet:balance $DEFAULT_WALLET)
 balance=\$(echo \$temp | grep -Eo "IRON [0-9]+.[0-9]+" |  grep -Eo "[0-9]+.[0-9]+")
 if [ "\$balance" = "" ]
 then
@@ -776,15 +729,6 @@ read -n 1 -s -r -p "Press any key to continue..."
 
 ###################################################################################
 function installMinimaExporter {
-
-if [ ! $PUSHGATEWAY_ADDRESS ] 
-then
-	read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091 or leave empty if you don't use pushgateway): " PUSHGATEWAY_ADDRESS
-	if [ "$PUSHGATEWAY_ADDRESS" != "" ] 
-	then
-		echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
-	fi
-fi
 source $HOME/.bash_profile
 echo -e "minima_exporter installation starts..."
 sleep 3
@@ -800,11 +744,6 @@ fi
 
 sudo tee <<EOF1 >/dev/null /usr/local/bin/minima_exporter.sh
 #!/bin/bash
-PUSHGATEWAY_ADDRESS=$PUSHGATEWAY_ADDRESS
-JOB="minima"
-metric_1='my_minima_status'
-metric_2='my_minima_lastblock'
-metric_3='my_minima_connections'
 function getMetrics {
 temp=\$(curl -s 127.0.0.1:9005/status)
 lastblock=\$(echo \$temp | jq .response.chain.block)
@@ -830,18 +769,6 @@ fi
 #LOGS
 echo -e "minima node info: version=\${version}, total_devices=\${total_devices}"
 echo -e "minima status report: status=\${status}, lastblock=\${lastblock}, connections=\${connections}, incentivecash_status=\${incentivecash_status}, daily_rewards=\${daily_rewards}"
-if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
-then
-cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/$IP_ADDRESS
-# TYPE my_minima_status gauge
-\$metric_1 \$status
-# TYPE my_minima_lastblock gauge
-\$metric_2 \$lastblock
-# TYPE my_minima_connections gauge
-\$metric_3 \$connections
-EOF
-echo -e "sended to pushgataway."
-fi
 }
 while true; do
 	getMetrics
@@ -889,17 +816,9 @@ SUPPORTER_NODES="Althea, Evmos, Idep, Stratos, Umee, assetMantle, Nibiru"
 echo -e "The script supports only one cosmos node per instance. At least for now!"
 read -n 1 -s -r -p "Press any key to continue or CRTL+C for abort installation..."
 echo ""
-if [ ! $PUSHGATEWAY_ADDRESS ] 
-then
-	read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091 or leave empty if you don't use pushgateway): " PUSHGATEWAY_ADDRESS
-	if [ "$PUSHGATEWAY_ADDRESS" != "" ] 
-	then
-		echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
-	fi
-fi
 if [ ! $DAEMON ]
 then	
-	COSMOS_NODES=("evmosd" "iond" "althead" "stratosd" "umeed" "assetd") 
+	COSMOS_NODES=("evmosd" "iond" "althead" "stratosd" "umeed" "assetd" "nibid") 
 	for item in ${COSMOS_NODES[*]}
 	do
 	if [  -f "/etc/systemd/system/${item}.service" ]
@@ -911,7 +830,7 @@ then
 				"althead") DAEMON="althea";;
 				"stratosd") DAEMON="stchaincli";;
 				"assetd") DAEMON="assetClient";;
-				"nibid") DAEMON="nibidi"
+				"nibid") DAEMON="nibid"
 			esac
 			break
 	fi
@@ -940,13 +859,7 @@ fi
 
 sudo tee <<EOF1 >/dev/null /usr/local/bin/cosmos_exporter.sh
 #!/bin/bash
-PUSHGATEWAY_ADDRESS=$PUSHGATEWAY_ADDRESS
-JOB="cosmos"
 DAEMON=$DAEMON
-metric_1='my_cosmos_latest_block_height'
-metric_2='my_cosmos_catching_up'
-metric_3='my_cosmos_voting_power'
-metric_4='my_cosmos_jailed'
 function getMetrics {
 temp=\$(curl -s localhost:26657/status)
 moniker=\$(echo \$temp | jq .result.node_info.moniker | sed 's/"//g')
@@ -972,7 +885,7 @@ fi
 if [ "\$DAEMON" != "" ]
 then
 	case \$DAEMON in  
-		"iond" | "althea" | "evmosd" | "umeed") jailed=\$($(which ${DAEMON}) query staking validators --limit 10000 --output json | jq -r '.validators[] | select(.description.moniker=='\"\$moniker\"')' | jq -r '.jailed');;
+		"iond" | "althea" | "evmosd" | "umeed" | "nibid" ) jailed=\$($(which ${DAEMON}) query staking validators --limit 10000 --output json | jq -r '.validators[] | select(.description.moniker=='\"\$moniker\"')' | jq -r '.jailed');;
 		"stchaincli") jailed=\$(stchaincli query staking validator \$(stchaincli keys show \$moniker --bech val --address --keyring-backend test) --trust-node --node \$(cat "$HOME/.stchaind/config/config.toml" | grep -oPm1 "(?<=^laddr = \")([^%]+)(?=\")") | grep -Eo "jailed: (true|false)" | grep -Eo "(true|false)");;
 		"assetClient") jailed=\$(\$(which assetClient) q staking validators --output json | jq -r '.[] | select(.description.moniker=="\$moniker")' | jq -r '.jailed')
 	esac
@@ -987,21 +900,8 @@ else
 fi
 #LOGS
 echo -e "cosmos status report: moniker=\${moniker}, latest_block_height=\${latest_block_height}, catching_up=\${catching_up}, voting_power=\${voting_power}, jailed=\${jailed}"
-if [ "\$PUSHGATEWAY_ADDRESS" != "" ] && [ "\$DAEMON" != "" ]
-then
-cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/$IP_ADDRESS
-# TYPE my_cosmos_latest_block_height gauge
-\$metric_1 \$latest_block_height
-# TYPE my_cosmos_catching_up gauge
-\$metric_2 \$catching_up
-# TYPE my_cosmos_voting_power gauge
-\$metric_3 \$voting_power
-# TYPE my_cosmos_jailed gauge
-\$metric_3 \$jailed
-EOF
-echo -e "sended to pushgataway."
-fi
 }
+
 while true; do
 	getMetrics
 	echo "sleep 120 sec."
@@ -1043,15 +943,6 @@ read -n 1 -s -r -p "Press any key to continue..."
 }
 ###################################################################################
 function installMassaExporter {
-
-if [ ! $PUSHGATEWAY_ADDRESS ] 
-then
-	read -p "Enter your pushgateway ip-address (example: 142.198.11.12:9091 or leave empty if you don't use pushgateway): " PUSHGATEWAY_ADDRESS
-	if [ "$PUSHGATEWAY_ADDRESS" != "" ] 
-	then
-		echo 'export PUSHGATEWAY_ADDRESS='${PUSHGATEWAY_ADDRESS} >> $HOME/.bash_profile
-	fi
-fi
 read -p "Enter your wallet password: " MASSA_PASSWORD
 echo -e "massa_exporter installation starts..."
 sleep 3
@@ -1067,14 +958,8 @@ source $HOME/.bash_profile
 
 sudo tee <<EOF1 >/dev/null /usr/local/bin/massa_exporter.sh
 #!/bin/bash
-PUSHGATEWAY_ADDRESS=$PUSHGATEWAY_ADDRESS
 MASSA_PASSWORD=$MASSA_PASSWORD
-JOB="massa"
-metric_1='my_massa_balance'
-metric_2='my_massa_rolls'
-metric_3='my_massa_active_rolls'
-metric_4='my_massa_incoming_peers'
-metric_5='my_massa_outgoing_peers'
+
 function getMetrics {
 cd $HOME/massa/massa-client/
 wallet_info=\$(./massa-client wallet_info -p \$MASSA_PASSWORD)
@@ -1119,23 +1004,8 @@ fi
 #LOGS
 echo -e "massa node info: node_id=\${node_id}, \${node_version}"
 echo -e "massa status report: balance=\${balance}, rolls=\${rolls}, active_rolls=\${active_rolls}, incoming_peers=\${incoming_peers}, outgoing_peers=\${outgoing_peers}, current_cycle=\${current_cycle}"
-if [ "\$PUSHGATEWAY_ADDRESS" != "" ]
-then
-cat <<EOF | curl -s --data-binary @- $PUSHGATEWAY_ADDRESS/metrics/job/\$JOB/instance/$IP_ADDRESS
-# TYPE my_massa_balance gauge
-\$metric_1 \$balance
-# TYPE my_massa_rolls gauge
-\$metric_2 \$rolls
-# TYPE my_massa_active_rolls gauge
-\$metric_3 \$active_rolls
-# TYPE my_massa_incoming_peers gauge
-\$metric_4 \$incoming_peers
-# TYPE my_massa_outgoing_peers gauge
-\$metric_5 \$outgoing_peers
-EOF
-echo -e "sended to pushgataway."
-fi
 }
+
 while true; do
 	getMetrics
 	echo "sleep 120 sec."
@@ -1176,70 +1046,8 @@ fi
 read -n 1 -s -r -p "Press any key to continue..."
 }
 ###################################################################################
-function installStreamrBalance {
 
-if [ ! $streamr_wallet_address ] 
-then
-	read -p "Enter your node's address: " streamr_wallet_address
-	echo 'export streamr_wallet_address='${streamr_wallet_address}  >> $HOME/.bash_profile
-fi
-
-sudo apt install bc
-
-sudo tee <<EOF1 >/dev/null /usr/local/bin/streamr_balance.sh
-#!/bin/bash
-function getMetrics {
-wallet_info=\$(wget -qO- "https://testnet1.streamr.network:3013/stats/$streamr_wallet_address")
-codes_claimed=\$(jq ".claimCount" <<< \$wallet_info)
-if [ "\$codes_claimed" = "" ]
-then
-	codes_claimed=0
-fi
-#LOGS
-echo -e "streamr balance: codes_claimed=\${codes_claimed}"
-}
-while true; do
-	getMetrics
-	echo "sleep 120 sec."
-	sleep 300
-done
-EOF1
-
-chmod +x /usr/local/bin/streamr_balance.sh
-
-sudo tee <<EOF >/dev/null /etc/systemd/system/streamr_balance.service
-[Unit]
-Description=Streamr Balance Checker
-Wants=network-online.target
-After=network-online.target
-[Service]
-User=$USER
-Group=$USER
-Type=simple
-ExecStart=/usr/local/bin/streamr_balance.sh
-[Install]
-WantedBy=multi-user.target
-EOF
-
-sudo systemctl daemon-reload && sudo systemctl enable streamr_balance && sudo systemctl start streamr_balance
- 
-VAR=$(systemctl is-active streamr_balance.service)
-
-if [ "$VAR" = "active" ]
-then
-	echo ""
-	echo -e "streamr_balance.service \e[32minstalled and works\e[39m! You can check logs by: journalctl -u streamr_balance -f"
-	echo ""
-else
-	echo ""
-	echo -e "Something went wrong. \e[31mInstallation failed\e[39m! You can check logs by: journalctl -u streamr_balance -f"
-	echo ""
-fi
-read -n 1 -s -r -p "Press any key to continue..."
-}
-
-###################################################################################
-function installUmeeAD {
+function installCosmosAutoDelegation {
 
 echo -e "UmeeAD installation starts..."
 sleep 3
@@ -1393,10 +1201,8 @@ case $option in
 		10) installMinimaExporter;;
 		11) installCosmosExporter;;
 		12) installMassaExporter;;
-		13) installUmeeAD;;
+		13) installCosmosAutoDelegation;;
 		0) clearInstance;;
-		50) installAleoWatchdog;;
-		51) installStreamrBalance;;
 		"h") echo -e "HELP:"
 			 echo "- You need to install prometheus, grafana, loki and pushgataway (optional) for collecting metrics from your servers. It needs to be done only once and preferably on a separate server."
 			 echo "- After that, go to grafana interface (ip_address:3000) and add datasource (prometeus and loki). Read here for more information: https://grafana.com/docs/grafana/latest/datasources/add-a-data-source/"
